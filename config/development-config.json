@@ -1,0 +1,21 @@
+{
+    "name": "node_app",
+    "server": {
+        "port": 3000,
+        "host": "0.0.0.0"
+    },
+    "services": {
+        "slonik": {},
+        "redis": {},
+        "logger": {
+            "categories": {
+                "default": {
+                    "appenders": ["console"],
+                    "level": "debug",
+                    "enableCallStack": true
+                }
+            }
+        }
+    },
+    "middleware": {}
+}

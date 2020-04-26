@@ -1,0 +1,33 @@
+{
+  "name": "Articles",
+  "version": "1.0.0",
+  "description": "Articles Microservice",
+  "main": "dist/index.js",
+  "repository": "https://github.com/3xpl0it2c/Blog",
+  "author": "Nadav Raz<3xpl0it2c@gmail.com>",
+  "license": "MIT",
+  "private": true,
+  "dependencies": {
+    "@hapi/joi": "^17.1.1",
+    "@types/slonik": "^22.1.2",
+    "dotenv": "^8.2.0",
+    "koa": "^2.11.0",
+    "koa-better-body": "^3.3.9",
+    "koa-router": "^8.0.8",
+    "log4js": "^6.1.2",
+    "slonik": "^22.4.4"
+  },
+  "devDependencies": {
+    "@types/dotenv": "^8.2.0",
+    "@types/hapi__joi": "^16.0.12",
+    "@types/jest": "^25.1.2",
+    "@types/koa-better-body": "^3.1.2",
+    "@types/koa-router": "^7.4.0",
+    "@types/node": "^13.7.1",
+    "jest": "^25.1.0",
+    "tspath": "^1.3.7"
+  },
+  "scripts": {
+    "test": "jest"
+  }
+}

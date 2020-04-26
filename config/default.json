@@ -1,0 +1,22 @@
+{
+    "name": "node_app",
+    "server": {
+        "port": 3000,
+        "host": "127.0.0.1"
+    },
+    "services": {
+        "slonik": {},
+        "redis": {},
+        "logger": {
+          "appenders": {},
+          "categories": {
+            "default": {
+              "appenders": ["console"],
+              "level": "info"
+            }
+          }
+        }
+    },
+    "middleware": {
+    }
+}
