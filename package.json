@@ -11,12 +11,12 @@
     "@hapi/joi": "^17.1.1",
     "@log4js-node/logstashudp": "^1.2.1",
     "@types/hapi__joi": "^16.0.12",
+    "@types/slonik": "^22.1.2",
     "dotenv": "^8.2.0",
     "ioredis": "^4.16.1",
     "koa": "^2.11.0",
     "koa-better-body": "^3.3.9",
     "koa-router": "^8.0.7",
-    "libpq": "^1.8.9",
     "log4js": "^6.1.2",
     "slonik": "^22.4.4",
     "uuid": "^7.0.3"

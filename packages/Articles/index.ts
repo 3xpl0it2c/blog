@@ -17,6 +17,8 @@ import { default as createRouter } from './router';
     (which leads to line 2 of this comment)
 */
 
+// I still don't know what to do about it..
+// This is why people dislike Typescript.
 /* eslint-disable @typescript-eslint/indent */
 type KoaWithRouter = Koa<
                     any,
@@ -66,8 +68,8 @@ if (require.main === module) {
     const host = process.env.NODE_HOST as any | '' + (hostname());
 
     app.listen(port, host, () => {
-        logger.info(`ON ${hostname()}:${process.env.NODE_PORT}`);
-        logger.debug(`${process.env.NODE_NAME} Server is up and running at http://${hostname()}:${process.env.NODE_PORT}`);
+        logger.info(`ON ${host}:${port}`);
+        logger.debug(`${process.env.NODE_NAME} Server is up and running at http://${host}:${port}`);
     });
 };
 

@@ -1,8 +1,8 @@
 import { Context } from 'koa';
 import { Package } from './package';
-import { appConfiguration } from './appConfig';
+import { MountableParams } from './MountableParams';
 
 export type Middleware = Pick<Package, 'path' | 'method'> & {
-    handler: (config?: appConfiguration) =>
+    handler: (x: MountableParams) =>
     (ctx: Context, next?: any) => Promise<void>;
 };

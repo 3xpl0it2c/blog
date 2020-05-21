@@ -1,10 +1,12 @@
 /*
+
 1.Load config.
 2.Setup logger.
 3.Init services.
 4.Mount middelware.
 5.Mount packages.
 6.Listen.
+
 */
 
 import { relative } from 'path';
@@ -12,6 +14,7 @@ import * as Koa from 'koa';
 import { config as setupEnv } from 'dotenv';
 import { configure } from 'log4js';
 import Router from 'koa-router';
+import { zipArrays } from './lib/zip';
 
 import { default as loadConfig } from './config';
 import { default as services } from './services';
@@ -98,16 +101,15 @@ const main = async (): Promise<any> => {
         };
     }, { logger: loggerObj });
 
-    // * Finished stage 4 (mount middleware).
-    const withMiddleware = middlewares.reduce((mount: any, middleware: Middleware) => {
-        return mount(middleware)(configuration);
-    }, mount);
+    const toMount = zipArrays(middlewares, packages);
+    const mountablesParams = {
+	    config: configuration,
+	    resources: initializedServices,
+    };
 
-    // ? To be used later, in order to mount custom mounts and so forth.
-    // * Finished stage 5 (mount packages).
-    const withPackages = packages.reduce((mount: any, pkg: Package) => {
-        return mount(pkg)({ resources: initializedServices });
-    }, withMiddleware);
+    for (const mountable in toMount) {
+	    mount(mountable)(mountablesParams);
+    }
 
     const app = mountRouter(router)(koa);
 
@@ -129,6 +131,7 @@ const onError = (error: Error): never => {
     throw error;
 };
 
+// https://nodejs.org/api/modules.html#modules_accessing_the_main_module
 if (require.main === module) {
     main()
         .then((f) => f(onSuccess))
