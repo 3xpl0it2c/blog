@@ -1,36 +1,14 @@
 {
     "name": "blog_gateway",
     "server": {
-        "graphql": true,
         "port": 3000,
-        "host": null
+        "host": "127.0.0.1"
     },
     "services": {
         "slonik": {},
         "redis": {},
-        "logger": {
-            "appenders": {
-                "logstash": {
-                    "type": "@log4js-node/logstashudp",
-                    "host": "0.0.0.0",
-                    "port": "8080",
-                    "layout": {
-                        "type": "dummy"
-                    }
-                }
-            },
-            "categories": {
-                "default": {
-                    "appenders": ["logstash"],
-                    "level": "info"
-                }
-            }
-        }
+        "logger": {}
     },
     "middleware": {
-        "jwt": {
-            "privateKey": "./private.key",
-            "publicKey": "./public.key"
-        }
     }
 }

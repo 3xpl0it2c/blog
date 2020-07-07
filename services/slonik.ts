@@ -1,19 +1,38 @@
 import { Log4js } from 'log4js';
-import { createPool, DatabaseConnectionType } from 'slonik';
+import { createPool, DatabaseConnectionType, sql } from 'slonik';
 
-import { appConfiguration } from '@interfaces/appConfig';
-import { Service } from '@interfaces/service';
+import { appConfiguration } from '../interfaces/appConfig';
+import { Service } from '../interfaces/service';
+
+const serviceName = 'slonik';
 
 const init = async (
     conf: appConfiguration,
     logObj: Log4js,
-): Promise<DatabaseConnectionType> => {
+): Promise<DatabaseConnectionType | null> => {
+    const { connectionURI } = conf.services.slonik;
     const logger = logObj.getLogger('services');
 
-    return 'Slonik Service';
+    try {
+        const pool = createPool(connectionURI);
+        const testQuery = await pool.query(sql`SELECT 1 + 1 AS RESULT`);
+
+        if (testQuery.rows[0].result === 2) {
+            return pool;
+        } else {
+            throw `Test query failed !
+            expected to recieve one row and one column equal to 2 !
+            Instead Recieved: ${testQuery}`;
+        }
+    } catch (why) {
+        logger.fatal(`Service ${serviceName} failed to start !`);
+        logger.debug(`Service ${serviceName} failed to start because:\n ${why}`);
+    };
+
+    return null;
 };
 
 export default {
-    name: 'slonik',
+    name: serviceName,
     init,
 } as Service;

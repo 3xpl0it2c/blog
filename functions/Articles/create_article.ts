@@ -1,9 +1,7 @@
 /*
-What you need: An Article.
-How are you going to get it ?
-Via URL query parameters.
-What are you going to do with that Article ?
-Insert it into the database.
+ * As the name states -
+ * We recieve an article in the request body,
+ * Verify it, and insert it into the database.
 */
 
 /* eslint-disable max-len */
@@ -11,8 +9,8 @@ Insert it into the database.
 import { Context } from 'koa';
 import { object, string, number } from '@hapi/joi';
 import { default as pick } from '@lib/entityFromObject';
-import { ArticleInitiative } from '../domain/Article';
-import { Module } from '../domain/module';
+import { declareAppModule } from '@lib/index';
+import { ArticleInitiative } from "@interfaces/index";
 
 const main = async (ctx: Context, next: () => Promise<unknown>): Promise<void> => {
     // ? A waste of memory.
@@ -40,8 +38,8 @@ const main = async (ctx: Context, next: () => Promise<unknown>): Promise<void> =
     await next();
 };
 
-export default {
+export default declareAppModule({
     httpMethod: 'POST',
     path: '/create_article',
     handler: main,
-} as Module;
+});

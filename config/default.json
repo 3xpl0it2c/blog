@@ -1,17 +1,25 @@
 {
     "name": "node_app",
-    "server": {
+    "serverConf": {
         "port": 3000,
-        "host": "127.0.0.1"
+        "host": "127.0.0.1",
+        "appConf": {}
     },
-    "services": {
-        "slonik": {},
+    "servicesConf": {
+        "slonik": {
+            "connectionURI": "postgres://nadav:x^5]Eh0wC%7qo,nM{G@10.0.0.24/blog_mono"
+        },
         "redis": {},
         "logger": {
-          "appenders": {},
+          "appenders": {
+            "file": {
+                "type": "file",
+                "filename": "shimi-tavori.log"
+            }
+          },
           "categories": {
             "default": {
-              "appenders": ["console"],
+              "appenders": ["file"],
               "level": "info"
             }
           }

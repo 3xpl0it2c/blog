@@ -1,3 +1,5 @@
-import { Middleware } from '../interfaces';
+import { default as jwt } from './jwt';
 
-export const dummyExport = [] as Middleware[];
+export default [
+    jwt,
+];

@@ -1,4 +1,4 @@
-import { default as pick } from './entityFromObject';
+import { pick } from './pick';
 
 describe('entityFromObject', () => {
     test('No Target, With Schema, fail', () => {
@@ -27,7 +27,7 @@ describe('entityFromObject', () => {
             'any_prop': 'any_value',
             'another_prop': 'another_any_value',
         };
-        const schema = [];
+        const schema: unknown[] = [];
         expect(pick(schema)(target))
             .toEqual(target);
     });

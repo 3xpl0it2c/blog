@@ -15,13 +15,18 @@ RUN apk add --no-cache --virtual .build-deps-yarn curl \
     && rm yarn-v$YARN_VERSION.tar.gz \
     && apk del .build-deps-yarn
 
-# * Remember that workdir is /home/node/app
 COPY ./dist ./
+COPY ./LICENSE ./
+COPY ./.env ./
 COPY ./yarn.lock ./
+COPY ./config/production-config.json ./
+COPY ./config/development-config.json ./
+COPY ./config/default.json ./
 
 # Install dependecies.
 RUN yarn install --pure-lockfile
 
 EXPOSE 8080
 
+# We only copy the dist folder, therefore there is no need for stating dist/index.js
 CMD ["node", "index.js"]

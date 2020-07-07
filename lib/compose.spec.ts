@@ -1,4 +1,4 @@
-import { default as compose } from './compose';
+import { compose } from './compose';
 
 type x = (str: string) => string;
 

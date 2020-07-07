@@ -1,2 +1,3 @@
 export * from './compose';
-export * from './entityFromObject';
+export * from './pick';
+export * from './declareAppModule';

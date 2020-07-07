@@ -3,46 +3,35 @@
 1.Load config.
 2.Setup logger.
 3.Init services.
-4.Mount middelware.
-5.Mount packages.
-6.Listen.
+4.Mount modules.
+5.Listen.
 
+TODO: Koa instance configuration (like app.silent, cookie secret initialization, etc..)
 */
 
 import { relative } from 'path';
-import * as Koa from 'koa';
+import { default as Koa } from 'koa';
 import { config as setupEnv } from 'dotenv';
 import { configure } from 'log4js';
 import Router from 'koa-router';
-import { zipArrays } from './lib/zip';
 
-import { default as loadConfig } from './config';
-import { default as services } from './services';
-import { dummyExport as middlewares } from './middleware';
-import { default as packages } from './packages';
-import { Service, Middleware, Package } from './interfaces';
-
-const createMounter = (router: Router) => (toMount: Package | Middleware) => (packageArgs: any): any => {
-    const { method, path, handler } = toMount;
-
-    const methods = {
-        GET: router.get,
-        POST: router.post,
-        PUT: router.put,
-        DELETE: router.delete,
-        OPTIONS: router.options,
-        ALL: router.all,
-    };
-
-    methods[method](path, handler(packageArgs));
-
-    return createMounter(router);
-};
+import { default as loadConfig } from '@config';
+import { compose } from '@lib';
+import services from '@services';
+import { default as middlewares } from '@middleware';
+import { default as funcs } from '@functions';
+import { Service } from '@interfaces';
 
 const mountRouter = (router: Router) => (app: Koa): Koa<any, any> => {
     return app
         .use(router.routes())
         .use(router.allowedMethods());
+};
+
+const insertServices = (services: Record<any, Service>) => (app: Koa<any, any>) => {
+    return Object.assign(app, {
+        context: services
+    });
 };
 
 const main = async (): Promise<any> => {
@@ -51,7 +40,6 @@ const main = async (): Promise<any> => {
 
     const koa = new Koa();
     const router = new Router();
-    const mount = createMounter(router);
 
     const configFolderPath = relative(
         __dirname,
@@ -69,49 +57,56 @@ const main = async (): Promise<any> => {
         configuration.services.logger,
     );
 
-    // * Services log into a different category.
-    // * Therefore we keep the original logger object.
-    // (Instead of just calling getLogger directly)
+    /*
+     * Services log into a different category.
+     * Therefore we keep the original logger object.
+     * (Instead of just calling getLogger directly)
+     */
     const logger = loggerObj.getLogger('init');
 
+    // * Finished stage 3 (init services).
     /*
-    * This object includes certain services that the packages require -
+    * This object includes certain services that the functions require -
     * - In order to function properly.
     * Examples include a logger, a database client and so forth.
-      The packages merge this object into their context,
-      Therefore allowing their functions access to all they need.
+      This file later on injects the services object into koa's context,
+      Therefore allowing the functions access to all they need.
     */
-    // * Finished stage 3 (init services).
-    const initializedServices = services.reduce(async (acc: any, service: Service) => {
+    const initializedServices = await services.reduce(async (acc: Promise<any>, service: Service) => {
         try {
+            const solvedAcc = await acc;
             const serviceInstance = service.init instanceof Promise
                 ? await service.init(configuration, loggerObj)
                 : service.init(configuration, loggerObj);
-            // TODO: FUCKING LOG ?!
-            logger.info('');
+            // TODO: LOG ?!
+            logger.info(`Successfully Initialized service ${service.name} at ${new Date()}`);
 
-            return Object.assign(acc, {
+            return Object.assign(solvedAcc, {
                 [`${service.name}`]: serviceInstance,
             });
         } catch (e) {
-            if (logger.isFatalEnabled) {
-                // TODO: Better Error message.
+            if (logger.isFatalEnabled()) {
+                // TODO: Rethink whether we need an error message.
                 logger.fatal(`Failed to initialize service ${service.name} !`);
             }
         };
-    }, { logger: loggerObj });
+    }, Promise.resolve({ logger: loggerObj }));
 
-    const toMount = zipArrays(middlewares, packages);
-    const mountablesParams = {
-	    config: configuration,
-	    resources: initializedServices,
-    };
+    // Finished stage 4 (Mount Modules)
+    // All modules are declared with declareAppModule (lib folder)
+    // Therefore all of them receive a router and give it back,
+    // So it's safe to just use compose and be done with it.
+    const route = compose(
+        router,
+        ...middlewares,
+        ...funcs,
+    );
 
-    for (const mountable in toMount) {
-	    mount(mountable)(mountablesParams);
-    }
-
-    const app = mountRouter(router)(koa);
+    const app = compose(
+        koa,
+        insertServices(initializedServices),
+        mountRouter(route),
+    );
 
     // * Finished stage 6 (listen).
     return (callback: () => void): void => {

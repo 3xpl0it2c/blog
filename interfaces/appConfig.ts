@@ -1,4 +1,10 @@
 import { Configuration as loggerConf } from 'log4js';
+import { ClientConfigurationType } from 'slonik';
+
+export type slonikConf = {
+    connectionURI: string;
+    clientConfig?: ClientConfigurationType;
+};
 
 export type serverConfig = {
     host: string;
@@ -7,6 +13,7 @@ export type serverConfig = {
 
 export type servicesConfig = {
     logger: loggerConf;
+    slonik: slonikConf;
 };
 
 export type middlewareConfig = {};

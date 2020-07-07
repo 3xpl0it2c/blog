@@ -1,6 +1,14 @@
-import ms from 'ms';
+/*
+This code is very slow.
+All it does is take the config object,
+Go 2 levels deep, convert some keys from actual words like "2 days" to milliseconds
+And return the new object with the converted keys.
+That's it.
+*/
 
-// ! O(n + 3)
+
+import * as ms from 'ms';
+
 const convertKeywordsToMS = (
     elemOfTarget: string,
     keysToConvertInsideElem: Set<string>,

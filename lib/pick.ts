@@ -1,7 +1,6 @@
 /* eslint-disable max-len, @typescript-eslint/no-explicit-any */
 
-// ? rename to convertToArr
-const safeSchema = (schema: Record<string, any> | string[]): string[] => {
+const getObjectKeys = (schema: Record<string, any> | string[]): string[] => {
     return schema instanceof Array
         ? schema
         : Object.keys(schema);
@@ -9,13 +8,18 @@ const safeSchema = (schema: Record<string, any> | string[]): string[] => {
 
 const objEmpty = (target: any): boolean => Object.keys(target).length == 0/* && !(target instanceof Date) */;
 
+
+/*
+ * Provide an array of keys (or an object with the keys you want)
+ * And get the keys you specified extracted from the target.
+ * In case any keys were missing, check the __missing attribute.*/
 const pick = (schema: Record<string, any> | string[]) => (target: any): any => {
 
     if (objEmpty(target)) {
         throw new Error('target is empty');
     };
 
-    const requiredFields = safeSchema(schema);
+    const requiredFields = getObjectKeys(schema);
 
     if (requiredFields.length == 0) { // If schema is empty.
         return target;
@@ -34,4 +38,4 @@ const pick = (schema: Record<string, any> | string[]) => (target: any): any => {
     }, {});
 };
 
-export default pick;
+export { pick };
