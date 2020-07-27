@@ -1,5 +1,5 @@
 import { appConfiguration } from './appConfig';
-import { Log4js } from 'log4js';
+import { Logger } from 'log4js';
 
 export type Service = {
     name: string;

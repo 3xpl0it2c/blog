@@ -5,3 +5,4 @@ dist/**
 spec.md
 yarn.lock
 .vscode
+.DS_Store

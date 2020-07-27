@@ -1,9 +1,15 @@
 import { Configuration as loggerConf } from 'log4js';
-import { ClientConfigurationType } from 'slonik';
+import { ClientConfigurationType as slonikClientConf} from 'slonik';
+import { RedisOptions as redisClientConf } from 'ioredis';
 
 export type slonikConf = {
     connectionURI: string;
-    clientConfig?: ClientConfigurationType;
+    clientConfig?: slonikClientConf;
+};
+
+export type redisConf = {
+    connectionURI: string;
+    clientConfig?: redisClientConf;
 };
 
 export type serverConfig = {
@@ -14,9 +20,10 @@ export type serverConfig = {
 export type servicesConfig = {
     logger: loggerConf;
     slonik: slonikConf;
+    redis: redisConf;
 };
 
-export type middlewareConfig = {};
+export type middlewareConfig = Record<string, unknown>;
 
 export type appConfiguration = {
     name: string;

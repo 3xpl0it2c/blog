@@ -3,13 +3,25 @@
     "serverConf": {
         "port": 3000,
         "host": "127.0.0.1",
-        "appConf": {}
+        "appConf": {
+            "keys": [],
+            "silent": true,
+            "proxy": true,
+            "env": "production",
+            "subDomainOffset": ""
+        }
     },
     "servicesConf": {
         "slonik": {
             "connectionURI": "postgres://nadav:x^5]Eh0wC%7qo,nM{G@10.0.0.24/blog_mono"
         },
-        "redis": {},
+        "redis": {
+            "host": "127.0.0.1",
+            "port": "6379",
+            "family": 4,
+            "password": "super_duper_strong_secret_password",
+            "db": 0
+        },
         "logger": {
           "appenders": {
             "file": {

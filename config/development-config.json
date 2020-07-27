@@ -3,13 +3,20 @@
     "serverConf": {
         "port": 3000,
         "host": "127.0.0.1",
-        "appConf": {}
+        "appConf": {
+            "keys": [],
+            "silent": false,
+            "proxy": false,
+            "env": "development"
+        }
     },
     "servicesConf": {
         "slonik": {
             "connectionURI": "postgres://nadav:x^5]Eh0wC%7qo,nM{G@10.0.0.24/blog_mono"
         },
-        "redis": {},
+        "redis": {
+            "connectionURI": "redis://nadav:p4ssw0rd@10.0.0.24/0"
+        },
         "logger": {
           "appenders": {
             "file": {

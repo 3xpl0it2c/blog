@@ -32,6 +32,7 @@ module.exports = {
             "MemberExpression": 1,
             "flatTernaryExpressions": true,
 
-        }]
+        }],
+        "max-depth": ["warn", 4]
     }
 };

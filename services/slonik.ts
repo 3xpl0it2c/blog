@@ -20,9 +20,10 @@ const init = async (
         if (testQuery.rows[0].result === 2) {
             return pool;
         } else {
-            throw `Test query failed !
-            expected to recieve one row and one column equal to 2 !
-            Instead Recieved: ${testQuery}`;
+            throw new Error(
+                `Test query failed !` +
+                `expected to recieve one row and one column equal to 2 !` +
+                `Instead Recieved: ${testQuery}`);
         }
     } catch (why) {
         logger.fatal(`Service ${serviceName} failed to start !`);
