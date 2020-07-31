@@ -1,43 +1,65 @@
-#JWT Authentication Flow and Plan.
-
-JWT is stored in memory. (Expires in 2 min, no local/session storage !)
-Refresh token is stored as a Secure,HttpOnly,SameSite cookie. (Expires in 15 min)
-
-The refresh token is sent & retrieved via cookies
-JWT is sent via request body and retrieved via a url query param or the Authorization header (Bearer).
-
-Inside the refresh token we store an UUID.
-Inside the JWT we store the autehnticated user's ID.
-Inside the cache we store the refresh token's expiration date associated to the UUID we store in the refresh token.
-As JSON it would look like this:
+#JWT Authentication Flow.
+  
+## The flow
+JWT is stored in memory. (Expires in 2 min, **no local/session storage** !)  
+Refresh token is stored as a **Secure,HttpOnly,SameSite cookie**. (Expires in 15 min)  
+  
+Initially upon the user's login,  
+The JWT is sent inside the response body.  
+And is retrieved via the Authorization header. (Could be a url parameter too)  
+  
+When the JWT token expires, the client hits the server with it's refresh token,  
+In order to recieve a new JWT with which it could interact with our services.  
+  
+Inside the refresh token we store a random UUID, in this case I use nanoid.  
+Inside the JWT we store the authenticated user's ID.  
+  
+Inside the cache we store the refresh token with an associated counter.  
+The counter starts from **zero**.  
+When it goes beyond: **(Refresh Token TTL / JWT TTL) + 1** the token is removed from the cache. (TTL = Time To Live)  
+For example in our case a jwt is valid for 3 minutes and a refresh token is valid for 15 minutes.  
+So when the counter goes beyond 6 (15 minutes / 3 minutes = 5, add one we get 6) we remove the refresh token.  
+As JSON it would look like this:  
+`
 {
-    "REFRESH_TOKEN_UUID": "SOME_DATE_AT_WHICH_THE_TOKEN_STOPS_BEING_VALID"
+    "REFRESH_TOKEN_UUID": 0
 }
-
-Please note that the expiration date is a unix timestamp.
-In case you subtract a later date from a earlier one,
-The result is positive (e.g if a is 3PM and 15 Minutes(in unix) and b is 3PM and 13 Minutes(in unix), a - b > 0)
-Also, unix timestamps in my opinion are a lot simpler and easier to work with than "regular dates".
-They are just numbers, and that makes them simple and powerful.
-
-define path /login method post:
-    recieve cookie - refresh token
-    if refresh token in cache and is valid - send jwt
-    recieve params - username & password.
+`
+  
+Using the PX flag of Redis we are able to store refresh tokens and verify them easily.  
+It is simple - if the refresh token exists in the database (Redis) than it is valid, if not - the token's invalid.  
+And if the user decided to logout, we can just remove the refresh token ourselves.  
+  
+## Issues with this approach
+With this configuration we have given the attacker a (configurable) small time window for attacking.  
+Even if an attacker managed to get a jwt he will be limited for 2 minutes (configurable).  
+The thing is this approach is vulnerable to local attacks.  
+The attacker can send AJAX calls from the client's browser every 2 minutes (with the refresh token inside the cookie),  
+Recieve a jwt and perform malicious actions. (In case of something like XSS)  
+I don't think there is a silver bullet in this context, but I am very confident in this solution.  
+  
+## Route map:
+`
+POST /login :
+    Recieve params - username & password.
     Retrieve user info by name from db
-    if no user found with such name - require the user to re-enter his credentials.
+    If no user found with such name - require the user to re-enter his credentials.
     Hash Password recieved from user
     Compare hashed password from db to user's hased password
-    if they don't match - request the user to re-enter his credentials
+    If they don't match - request the user to re-enter his credentials
     Generate refresh_token & jwt
-    Send refresh_token and jwt back to user
+    Send refresh_token and jwt to user
 
-define path /refresh method get:
-    receieve cookie - refresh_token
-    if refresh_token isn't valid - respond with error and redirect to login
-    send jwt in response body
+GET /refresh :
+    Receieve cookie - refresh_token
+    If refresh_token isn't valid - respond with error and redirect to login
+    Send jwt in response body
 
-define path /logout method post:
-    recieve cookie - refresh_token
-    remove refresh_token from cache
-    client purges JWT from memory.
+POST /logout :
+    Recieve cookie - refresh_token
+    If no refresh_token return a 400
+    Remove refresh_token from cache
+    Client purges JWT from memory
+`
+  
+  
