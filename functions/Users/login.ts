@@ -1,11 +1,11 @@
 /*
-Upon recieving a POST to the /login path,
+Upon recieving a POST to the /user/login path,
 This function should:
 1.Recieve the username XOR email and password.
 2.Validate the schema and content using Joi.
 
 If the credentials are empty or do not match the required schema:
-    Respond with a 406.
+    Respond with a 400.
     (Meaning the client didn't satisfy what was requested of him to send.)
 Else:
     Validate credentials with database.
@@ -38,21 +38,21 @@ const successfulResponse = (
     ctx.cookies.set('refresh_token', refreshToken, ctx.cookieOptions);
 };
 
-const handler = async (ctx: Context) => {
-    const schema = Joi.object({
-        username: Joi.string()
-            .alphanum()
-            .min(3)
-            .max(20),
-        password: Joi.string()
-            .min(8)
-            .max(24)
-            .required(),
-        email: Joi.string()
-            .min(5)
-            .email(),
-    }).xor('email', 'username');
+const schema = Joi.object({
+    username: Joi.string()
+        .alphanum()
+        .min(3)
+        .max(20),
+    password: Joi.string()
+        .min(8)
+        .max(24)
+        .required(),
+    email: Joi.string()
+        .min(5)
+        .email(),
+}).xor('email', 'username');
 
+const handler = async (ctx: Context) => {
     try {
         const query = await schema.validateAsync(ctx.query);
         // returns either "id:name" or just "".
@@ -64,6 +64,7 @@ const handler = async (ctx: Context) => {
 
         if (creds) {
             const [userId, name] = creds.split(':');
+            // TODO: Find a way to inject the secret from the app's context
             const jsonWebToken = genToken(userId, 'CUSTOM_SAUCE', ctx.logger);
             const refreshToken = await genRefreshToken(ctx.redis, ctx.logger);
 
@@ -71,18 +72,17 @@ const handler = async (ctx: Context) => {
                 ? successfulResponse(ctx, jsonWebToken, name, refreshToken)
                 : httpError(ctx, 'Internal Server Error', 501);
         } else {
-            httpError(ctx, 'Invalid credentials', 406);
+            httpError(ctx, 'Invalid credentials', 400);
         }
     } catch (why) {
         const errMessage = 'Invalid Parameteres';
         httpError(ctx, errMessage, 400);
-        ctx.logger.log(`${ctx.method}-${ctx.url}--${new Date()}`);
     }
 };
 
 
 declareAppModule({
-    path: '/login',
+    path: '/user/login',
     httpMethod: 'POST',
     handler,
 });

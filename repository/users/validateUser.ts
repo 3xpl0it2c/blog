@@ -10,14 +10,14 @@ export const validateUser = (
     return pool.connect(async (conn) => {
         try {
             const byEmail = sql`email=${email}`;
-            const byUserName = sql`username=${userName}`;
+            const byUserName = sql`displayname=${userName}`;
             const identifier = userName ? byUserName : byEmail;
             const result: any = await conn.maybeOne(sql`
-                                                    SELECT id,password,name 
+                                                    SELECT id,password,firstname
                                                     FROM users 
                                                     WHERE ${identifier}
                                                     `);
-            const { id, password, name } = result.rows[0];
+            const { id, password, firstname } = result.rows[0];
             const [ok, why] = await verifyPassword(password, userPassword);
 
             if (why) {
@@ -37,7 +37,7 @@ export const validateUser = (
             }
 
             return ok
-                ? `${id}:${name}`
+                ? `${id}:${firstname}`
                 : '';
         } catch (why) {
             logger.error(`${new Date()}-Failed to execute SQL query-${why}`);

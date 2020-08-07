@@ -3,27 +3,51 @@ import { User } from '@interfaces';
 import { hashPassword } from '@lib';
 import {Logger} from 'log4js';
 
-
-// SELECT SCOPE_IDENTITY() 
-export const signUp = (user: User) => async (
+export const signUp = (user: User, verificationToken: string) => async (
     slonik: DatabasePoolType,
     logger: Logger,
-) => {
+): Promise<string> => {
     const { firstName, lastName, email, password } = user;
+    const hashedPass = await hashPassword(password, logger);
 
     try {
-        const hashedPass = hashPassword(password, logger);
+        if (!hashedPass) throw new Error('Failed to hash password');
 
-        slonik.connect(async (conn) => {
-            await conn.query(sql`
+        const userId: Promise<string> = new Promise((resolve, reject) => {
+            slonik.connect(async (conn) => {
+                const now = new Date();
+                const fields = sql.array([
+                    firstName,
+                    lastName,
+                    email,
+                    hashedPass,
+                    now,
+                    verificationToken,
+                ], 'text');
+
+                const newUserId: any = await conn.oneFirst(sql`
                              INSERT INTO users
-                             (firstName, lastName, email, password)
+                             (
+                              firstName,
+                              lastName,
+                              email,
+                              password,
+                              registration_date,
+                              verify_token
+                             )
                              VALUES
-                             (${sql.array([firstName, lastName, email, hashedPass], 'text')})
+                             (${fields})
+                             RETURNING id;
                              `);
 
-            logger.log(`Inserted new User to database`);
-        });
-    } catch (why) {}
-};
+                if (newUserId instanceof Error) return reject(newUserId);
 
+                return resolve(newUserId);
+            });
+        });
+
+        return await userId;
+    } catch (why) {
+        return '';
+    }
+};

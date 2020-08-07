@@ -1,7 +1,8 @@
 import ID from '@interfaces/ID';
 
 export type User = {
-    name: string;
+    displayName: string;
+    firstName: string;
     lastName: string;
     email: string;
     password: string;
