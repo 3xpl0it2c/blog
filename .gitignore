@@ -6,3 +6,4 @@ spec.md
 yarn.lock
 .vscode
 .DS_Store
+config/*-config.json

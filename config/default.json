@@ -13,10 +13,10 @@
     },
     "servicesConf": {
         "slonik": {
-            "connectionURI": "postgres://nadav:x^5]Eh0wC%7qo,nM{G@10.0.0.24/blog_mono"
+            "connectionURI": "postgres://user:password@host/database"
         },
         "redis": {
-            "host": "127.0.0.1",
+            "host": "host",
             "port": "6379",
             "family": 4,
             "password": "super_duper_strong_secret_password",
@@ -26,7 +26,7 @@
           "appenders": {
             "file": {
                 "type": "file",
-                "filename": "shimi-tavori.log"
+                "filename": "some_name.log"
             }
           },
           "categories": {

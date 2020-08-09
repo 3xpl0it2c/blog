@@ -12,7 +12,7 @@
     },
     "servicesConf": {
         "slonik": {
-            "connectionURI": "postgres://nadav:x^5]Eh0wC%7qo,nM{G@10.0.0.24/blog_mono"
+            "connectionURI": "postgres://nadav:@10.0.0.24/blog_mono"
         },
         "redis": {
             "connectionURI": "redis://nadav:p4ssw0rd@10.0.0.24/0"
