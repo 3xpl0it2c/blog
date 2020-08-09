@@ -35,6 +35,20 @@
               "level": "info"
             }
           }
+        },
+        "mailer": {
+            "host": "host",
+            "port": 465,
+            "auth": {
+                "user": "name",
+                "pass": "word"
+            },
+            "secure": true,
+            "tls": {
+                "rejectUnauthorized": true
+            },
+            "requireTLS": true,
+            "pool": true
         }
     },
     "middleware": {
