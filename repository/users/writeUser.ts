@@ -16,6 +16,7 @@ export const signUp = (user: User, verificationToken: string) => async (
         const userId: Promise<string> = new Promise((resolve, reject) => {
             slonik.connect(async (conn) => {
                 const now = new Date();
+
                 const fields = sql.array([
                     firstName,
                     lastName,

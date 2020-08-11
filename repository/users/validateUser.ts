@@ -40,9 +40,8 @@ export const validateUser = (
                 ? `${id}:${firstname}`
                 : '';
         } catch (why) {
-            logger.error(`${new Date()}-Failed to execute SQL query-${why}`);
+            logger.error(`Failed to execute SQL query-${why}`);
             logger.debug(
-                `${new Date()}\n` +
                 `Failed to retrieve uid, password and salt from database.\n` +
                 `Given userName: ${userName}\n` +
                 `Library error: ${why}\n`,
