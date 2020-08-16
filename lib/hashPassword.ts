@@ -5,15 +5,17 @@ export const hashPassword = async (
     password: string,
     logger: Logger,
 ): Promise<string> => {
+    if (!password || !logger) return '';
+
     try {
         const hashedPass = await hash(password);
 
-        logger.info(`Successfuly hashed password-${new Date()}`);
+        logger.info(`Successfuly hashed password`);
 
         return hashedPass;
     } catch (why) {
-        logger.info(
-            `Failed to generate hashed password-${why}-${new Date()}`,
+        logger.error(
+            `Failed to generate hashed password-${why}`,
         );
 
         return '';

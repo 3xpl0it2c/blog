@@ -1,52 +1,50 @@
-import { DatabasePoolType, sql } from 'slonik';
-import { verifyPassword } from '@lib';
+import { verifyPassword, pick } from '@lib';
 import { Logger } from 'log4js';
+import { DatabasePoolType, DataIntegrityError, sql } from 'slonik';
 
 export const validateUser = (
     userName: string,
     email: string,
     userPassword: string,
 ) => async (pool: DatabasePoolType, logger: Logger): Promise<string> => {
-    return pool.connect(async (conn) => {
-        try {
-            const byEmail = sql`email=${email}`;
-            const byUserName = sql`displayname=${userName}`;
-            const identifier = userName ? byUserName : byEmail;
-            const result: any = await conn.maybeOne(sql`
-                                                    SELECT id,password,firstname
-                                                    FROM users 
-                                                    WHERE ${identifier}
-                                                    `);
-            const { id, password, firstname } = result.rows[0];
-            const [ok, why] = await verifyPassword(password, userPassword);
+    const byEmail = sql`email=${email}`;
+    const byUserName = sql`displayname=${userName}`;
+    const identifier = userName ? byUserName : byEmail;
 
-            if (why) {
-                const now = new Date();
-                logger.error(
-                    `${now}-Failed to verify hashed password for user ${id}`,
-                );
-                logger.debug(
-                    `${now}\n` +
-                    `Failed to verify hashed password !\n` +
-                    `Password from db: ${password}\n` +
-                    `User provided password: ${userPassword}\n` +
-                    `User name: ${userName}\n` +
-                    `User ID: ${id}\n` +
-                    `Library error: ${why}\n`,
-                );
-            }
+    try {
+        const result = await pool.connect(async (conn) => {
+            return await conn.maybeOne(sql`
+                                        SELECT id,password,firstname
+                                        FROM users 
+                                        WHERE ${identifier}
+                                        `);
+        });
 
-            return ok
-                ? `${id}:${firstname}`
-                : '';
-        } catch (why) {
-            logger.error(`Failed to execute SQL query-${why}`);
-            logger.debug(
-                `Failed to retrieve uid, password and salt from database.\n` +
-                `Given userName: ${userName}\n` +
-                `Library error: ${why}\n`,
-            );
-            return '';
+        const { id, password, firstname } = pick([
+            'id',
+            'password',
+            'firstname',
+        ])(result);
+
+        const [ok, why] = await verifyPassword(password, userPassword);
+
+        if (why) {
+            logger.error(`Failed to verify user-${id}`);
+            logger.debug(`validateUser.ts-Password verification failed-${why}`);
         }
-    });
+
+        return ok ? `${id}:${firstname}` : '';
+    } catch (why) {
+        switch (true) {
+            case why instanceof DataIntegrityError:
+                logger.error(`Failed to locate user in database`);
+                logger.debug(
+                    `validateUser.ts-multiplie rows for one user-${why}`,
+                );
+            case why instanceof Error:
+                logger.error(`Unknown Error while validating`);
+                logger.debug(`validateUser.ts-Unknown error-${why}`);
+        }
+        return '';
+    }
 };

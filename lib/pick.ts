@@ -1,28 +1,25 @@
-const getObjectKeys = (schema: Record<string, any> | string[]): string[] => {
-    return schema instanceof Array
-        ? schema
-        : Object.keys(schema);
-};
-
-const objEmpty = (target: any): boolean => (
-    Object.keys(target).length == 0/* && !(target instanceof Date) */
-);
-
-
 /*
  * Provide an array of keys (or an object with the keys you want)
  * And get the keys you specified extracted from the target.
  * In case any keys were missing, check the __missing attribute.*/
-const pick = (
-    schema: Record<string, any> | string[],
-) => (target: Record<string, unknown>): any => {
-    if (objEmpty(target)) {
+
+const getObjectKeys = (schema: Record<string, any> | string[]): string[] => {
+    return schema instanceof Array ? schema : Object.keys(schema);
+};
+
+const objEmpty = (target: any): boolean => Object.keys(target).length == 0;
+
+const pick = (schema: Record<string, any> | string[]) => (
+    target?: Record<string, unknown> | null,
+): any => {
+    if (!target || objEmpty(target)) {
         throw new Error('target is empty');
     }
 
     const requiredFields = getObjectKeys(schema);
 
-    if (requiredFields.length == 0) { // If schema is empty.
+    if (requiredFields.length == 0) {
+        // If schema is empty.
         return target;
     }
 
@@ -34,9 +31,9 @@ const pick = (
                 [`${field}`]: target[field],
             });
         } else {
-            (acc?.__missing)
+            acc?.__missing
                 ? acc.__missing.push(field)
-                : acc.__missing = [field];
+                : (acc.__missing = [field]);
         }
     }, {});
 };
