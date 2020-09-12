@@ -1,7 +1,11 @@
 import { Context } from 'koa';
 import { SetOption } from 'cookies';
 
-export const setCookie = (key: string, val: string, opts?: SetOption) => {
+export const setCookie = (
+    key: string,
+    val: string,
+    opts?: SetOption,
+): (c: Context) => void => {
     const defaults: SetOption = {};
     const options = opts
         ? opts

@@ -1,7 +1,7 @@
 /*
-Upon recieving a POST to the /user/login path,
+Upon receiving a POST to the /user/login path,
 This function should:
-1.Recieve the username XOR email and password.
+1.Receive the username XOR email and password.
 2.Validate the schema and content using Joi.
 
 If the credentials are empty or do not match the required schema:
@@ -10,9 +10,10 @@ If the credentials are empty or do not match the required schema:
 Else:
     Validate credentials with database.
 
-In case credentials are correct:
+In case credentials match with db:
     Respond with jwt and user's name in body.
     Add Refresh token to the cookies.
+
 In case credentials are incorrect:
     Respond with a 400
     In body say that credentials are incorrect.
@@ -22,7 +23,6 @@ import { Context } from 'koa';
 import { default as Joi } from '@hapi/joi';
 import { declareAppModule, genToken, httpError } from '@lib';
 import { validateUser, genRefreshToken } from '@repository';
-
 
 const successfulResponse = (
     ctx: Context,
@@ -55,15 +55,15 @@ const schema = Joi.object({
 const handler = async (ctx: Context) => {
     try {
         const query = await schema.validateAsync(ctx.query);
-        // returns either "id:name" or just "".
-        const creds = await validateUser(
+
+        const credentials = await validateUser(
             query.username,
             query.email,
             query.password,
         )(ctx.slonik, ctx.logger);
 
-        if (creds) {
-            const [userId, name] = creds.split(':');
+        if (!!credentials[0]) {
+            const [userId, name] = credentials;
             // TODO: Find a way to inject the secret from the app's context
             const jsonWebToken = genToken(userId, 'CUSTOM_SAUCE', ctx.logger);
             const refreshToken = await genRefreshToken(ctx.redis, ctx.logger);
@@ -75,13 +75,13 @@ const handler = async (ctx: Context) => {
             httpError(ctx, 'Invalid credentials', 400);
         }
     } catch (why) {
-        const errMessage = 'Invalid Parameteres';
+        const errMessage = 'Invalid Parameters';
         httpError(ctx, errMessage, 400);
     }
 };
 
 
-declareAppModule({
+export default declareAppModule({
     path: '/user/login',
     httpMethod: 'POST',
     handler,

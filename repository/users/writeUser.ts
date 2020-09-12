@@ -1,5 +1,15 @@
+/*
+TL;DR - Give this a string of some UUID/Random and an user object.
+
+1.Receive a random token (user for verification) and a user object.
+2.Hash the provided password/
+3.Grab the current date in ISO format.
+4.Insert all of this (user, hashed password, current date) into the db.
+5.Return the id of the newly created user.
+
+*/
 import { User } from '@interfaces';
-import { hashPassword, pick } from '@lib';
+import { hashPassword } from '@lib';
 import { Logger } from 'log4js';
 import {
     DatabasePoolType,
@@ -43,24 +53,24 @@ export const signUp = (user: User, verificationToken: string) => async (
         return userId;
     } catch (why) {
         switch (true) {
-            case why instanceof DataIntegrityError:
-                logger.error(`Integrity Error while creating user`);
-                logger.debug(
-                    `writeUser.ts-Recieved multiplie results from insertion-${why}`,
-                );
-                break;
-            case why instanceof NotFoundError:
-                logger.error(`Newly created user is not found`);
-                logger.debug(
-                    `writeUser.ts-Did not recieve inserted user id-${why}`,
-                );
-                break;
-            case why instanceof Error:
-                logger.error(`General Failure writing user`);
-                logger.debug(`writeUser.ts-Unknown Error-${why}`);
-                break;
-            default:
-                break;
+        case why instanceof DataIntegrityError:
+            logger.error(`Integrity Error while creating user`);
+            logger.debug(
+                `writeUser.ts-Received multiple results from insertion-${why}`,
+            );
+            break;
+        case why instanceof NotFoundError:
+            logger.error(`Newly created user is not found`);
+            logger.debug(
+                `writeUser.ts-Did not receive inserted user id-${why}`,
+            );
+            break;
+        case why instanceof Error:
+            logger.error(`General Failure writing user`);
+            logger.debug(`writeUser.ts-Unknown Error-${why}`);
+            break;
+        default:
+            break;
         }
 
         // Returning an empty string indicates that there was a failure.

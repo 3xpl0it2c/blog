@@ -1,6 +1,11 @@
 import { hash } from 'argon2';
 import { Logger } from 'log4js';
 
+/**
+ * @desc Hashes a given string using argon2.
+ * @param string password - What string to hash
+ * @param logger logger - Log4js instance, available usually via koa`s context.
+ */
 export const hashPassword = async (
     password: string,
     logger: Logger,
@@ -10,7 +15,7 @@ export const hashPassword = async (
     try {
         const hashedPass = await hash(password);
 
-        logger.info(`Successfuly hashed password`);
+        logger.info(`Successfully hashed password`);
 
         return hashedPass;
     } catch (why) {

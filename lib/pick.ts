@@ -1,9 +1,12 @@
 /*
  * Provide an array of keys (or an object with the keys you want)
  * And get the keys you specified extracted from the target.
- * In case any keys were missing, check the __missing attribute.*/
+ * In case any keys were missing, check the __missing attribute.
+*/
 
-const getObjectKeys = (schema: Record<string, any> | string[]): string[] => {
+// Just extract the keys from an object,
+// This is here because we also accept an empty object as a schema.
+const makeSchema = (schema: Record<string, any> | string[]): string[] => {
     return schema instanceof Array ? schema : Object.keys(schema);
 };
 
@@ -16,10 +19,9 @@ const pick = (schema: Record<string, any> | string[]) => (
         throw new Error('target is empty');
     }
 
-    const requiredFields = getObjectKeys(schema);
+    const requiredFields = makeSchema(schema);
 
     if (requiredFields.length == 0) {
-        // If schema is empty.
         return target;
     }
 
@@ -32,7 +34,7 @@ const pick = (schema: Record<string, any> | string[]) => (
             });
         } else {
             acc?.__missing
-                ? acc.__missing.push(field)
+                ? acc.__missing.push(field) // Impure, but much simpler.
                 : (acc.__missing = [field]);
         }
     }, {});

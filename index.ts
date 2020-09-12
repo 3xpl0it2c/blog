@@ -36,7 +36,10 @@ const insertServices = (services: Record<any, unknown>) => (
     }
 );
 
-const initService = (configuration: appConfiguration, logger: Log4js) => async (acc: Promise<any>, service: Service) => {
+const initService = (
+    configuration: appConfiguration,
+    logger: Log4js,
+) => async (acc: Promise<any>, service: Service) => {
     const servicesLogger = logger.getLogger('services');
     const mainLogger = logger.getLogger('init');
 
