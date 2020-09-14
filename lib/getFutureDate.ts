@@ -1,4 +1,4 @@
-import * as ms from 'ms';
+import { default as ms } from 'ms';
 
 export const getFutureDate = (amount: string, from?: Date): number => {
     const now = from

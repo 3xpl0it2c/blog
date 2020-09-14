@@ -36,7 +36,7 @@ const insertServices = (services: Record<any, unknown>) => (
     }
 );
 
-const initService = (
+const serviceInitiator = (
     configuration: appConfiguration,
     logger: Log4js,
 ) => async (acc: Promise<any>, service: Service) => {
@@ -61,9 +61,6 @@ const initService = (
         return Object.assign(solvedAcc, {
             [`${service.name}`]: serviceInstance,
         });
-
-        // Services have their own logging category.
-        // That is why we don't catch the error.
     } catch {
         if (mainLogger.isFatalEnabled()) {
             mainLogger.fatal(
@@ -111,37 +108,9 @@ const main = async (): Promise<any> => {
       This file later on injects the services object into koa's context,
       Therefore allowing the functions access to all they need.
     */
-    const initializedServices = await services.reduce(
-        async (acc: Promise<any>, service: Service) => {
-            try {
-                const solvedAcc = await acc;
-                const serviceInstance = service.init instanceof Promise
-                    ? await service.init(configuration, loggerObj)
-                    : service.init(configuration, loggerObj);
-
-                // In case the service failed to initialize.
-                if (!serviceInstance) {
-                    throw new Error();
-                }
-
-                logger.info(
-                    `Initialized service ${service.name} at ${new Date()}`,
-                );
-
-                return Object.assign(solvedAcc, {
-                    [`${service.name}`]: serviceInstance,
-                });
-
-            // Services have their own logging category.
-            // That is why we don't catch the error.
-            } catch {
-                if (logger.isFatalEnabled()) {
-                    logger.fatal(
-                        `Failed to initialize service ${service.name} !`,
-                    );
-                }
-            }
-        }, Promise.resolve({ logger: loggerObj }));
+    const initService = serviceInitiator(configuration, loggerObj);
+    const initializedServices = await services
+        .reduce(initService, Promise.resolve({ logger: loggerObj }));
 
     // Finished stage 4 (Mount Modules)
     // All modules are declared with declareAppModule (lib folder)
@@ -167,7 +136,7 @@ const main = async (): Promise<any> => {
 };
 
 const onSuccess = (): void => {
-    console.log('App is up succesfully.');
+    console.log('App is up successfully.');
 };
 
 const onError = (error: Error): never => {

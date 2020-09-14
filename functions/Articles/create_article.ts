@@ -6,20 +6,20 @@
 
 /* eslint-disable max-len */
 
-import { Context } from 'koa';
+import { Context, Next } from 'koa';
 import { object, string, number } from '@hapi/joi';
-import { default as pick } from '@lib/entityFromObject';
-import { declareAppModule } from '@lib/index';
-import { ArticleInitiative } from "@interfaces/index";
+import { pick } from '@lib';
+import { declareAppModule } from '@lib';
+import { ArticleInitiative } from '@interfaces';
 
-const main = async (ctx: Context, next: () => Promise<unknown>): Promise<void> => {
+const handler = async (ctx: Context, next?: Next): Promise<void> => {
     // ? A waste of memory.
-    const requiredFields: ArticleInitiative = {
-        title: '',
-        subText: '',
-        assetCount: 0,
-        author: '',
-    };
+    const requiredFields = [
+        'title',
+        'subText',
+        'assetCount',
+        'author',
+    ];
 
     const ArticleInitiativeJoi = object({
         title: string().required().alphanum(),
@@ -33,13 +33,13 @@ const main = async (ctx: Context, next: () => Promise<unknown>): Promise<void> =
         const safeArticleBrief = await ArticleInitiativeJoi.validateAsync(articleBrief);
     } catch (e) {
         void 0;
-    };
+    }
 
-    await next();
+    await next ?? Promise.resolve();
 };
 
 export default declareAppModule({
     httpMethod: 'POST',
     path: '/create_article',
-    handler: main,
+    handler,
 });
