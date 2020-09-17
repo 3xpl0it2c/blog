@@ -18,7 +18,7 @@ import {
     NotFoundError,
 } from 'slonik';
 
-export const signUp = (user: User, verificationToken: string) => async (
+export const writeUser = (user: User, verificationToken: string) => async (
     slonik: DatabasePoolType,
     logger: Logger,
 ): Promise<string> => {
@@ -53,24 +53,24 @@ export const signUp = (user: User, verificationToken: string) => async (
         return userId;
     } catch (why) {
         switch (true) {
-        case why instanceof DataIntegrityError:
-            logger.error(`Integrity Error while creating user`);
-            logger.debug(
-                `writeUser.ts-Received multiple results from insertion-${why}`,
-            );
-            break;
-        case why instanceof NotFoundError:
-            logger.error(`Newly created user is not found`);
-            logger.debug(
-                `writeUser.ts-Did not receive inserted user id-${why}`,
-            );
-            break;
-        case why instanceof Error:
-            logger.error(`General Failure writing user`);
-            logger.debug(`writeUser.ts-Unknown Error-${why}`);
-            break;
-        default:
-            break;
+            case why instanceof DataIntegrityError:
+                logger.error(`Integrity Error while creating user`);
+                logger.debug(
+                    `writeUser.ts-INSERT resulted in multiple results-${why}`,
+                );
+                break;
+            case why instanceof NotFoundError:
+                logger.error(`Newly created user is not found`);
+                logger.debug(
+                    `writeUser.ts-Did not receive inserted user id-${why}`,
+                );
+                break;
+            case why instanceof Error:
+                logger.error(`General Failure writing user`);
+                logger.debug(`writeUser.ts-Unknown Error-${why}`);
+                break;
+            default:
+                break;
         }
 
         // Returning an empty string indicates that there was a failure.

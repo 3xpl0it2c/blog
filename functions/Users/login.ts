@@ -21,8 +21,10 @@ In case credentials are incorrect:
 
 import { Context } from 'koa';
 import { default as Joi } from '@hapi/joi';
+
 import { declareAppModule, genToken, httpError } from '@lib';
 import { validateUser, genRefreshToken } from '@repository';
+import { HttpStatusCodes } from '@interfaces';
 
 const successfulResponse = (
     ctx: Context,
@@ -39,17 +41,9 @@ const successfulResponse = (
 };
 
 const schema = Joi.object({
-    username: Joi.string()
-        .alphanum()
-        .min(3)
-        .max(20),
-    password: Joi.string()
-        .min(8)
-        .max(24)
-        .required(),
-    email: Joi.string()
-        .min(5)
-        .email(),
+    username: Joi.string().alphanum().min(3).max(20),
+    password: Joi.string().min(8).max(24).required(),
+    email: Joi.string().min(5).email(),
 }).xor('email', 'username');
 
 const handler = async (ctx: Context) => {
@@ -68,18 +62,21 @@ const handler = async (ctx: Context) => {
             const jsonWebToken = genToken(userId, 'CUSTOM_SAUCE', ctx.logger);
             const refreshToken = await genRefreshToken(ctx.redis, ctx.logger);
 
-            (jsonWebToken && refreshToken)
+            jsonWebToken && refreshToken
                 ? successfulResponse(ctx, jsonWebToken, name, refreshToken)
-                : httpError(ctx, 'Internal Server Error', 501);
+                : httpError(
+                      ctx,
+                      'Internal Server Error',
+                      HttpStatusCodes.INTERNAL_SERVER_ERROR,
+                  );
         } else {
-            httpError(ctx, 'Invalid credentials', 400);
+            httpError(ctx, 'Invalid credentials', HttpStatusCodes.BAD_REQUEST);
         }
     } catch (why) {
         const errMessage = 'Invalid Parameters';
-        httpError(ctx, errMessage, 400);
+        httpError(ctx, errMessage, HttpStatusCodes.BAD_REQUEST);
     }
 };
-
 
 export default declareAppModule({
     path: '/user/login',
