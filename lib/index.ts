@@ -8,3 +8,4 @@ export * from './httpError';
 export * from './hashPassword';
 export * from './okRedisResponse';
 export * from './retry';
+export * from './assign';

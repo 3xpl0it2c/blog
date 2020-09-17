@@ -6,7 +6,6 @@
 4.Mount modules.
 5.Listen.
 
-TODO: Koa instance configuration (like app.silent, cookie secrets, etc..)
 */
 
 import { relative } from 'path';
@@ -16,25 +15,27 @@ import { configure, Log4js } from 'log4js';
 import Router from 'koa-router';
 
 import { default as loadConfig } from '@config';
-import { compose } from '@lib';
+import { compose, pick, assign } from '@lib';
 import services from '@services';
 import { default as middlewares } from '@middleware';
 import { default as funcs } from '@functions';
 import { Service, appConfiguration } from '@interfaces';
 
+const koaConfKeys = ['silent', 'subDomainOffset', 'keys', 'proxy', 'env'];
+
+const extractKoaConf = pick(koaConfKeys);
+
 const mountRouter = (router: Router) => (app: Koa): Koa<any, any> => {
-    return app
-        .use(router.routes())
-        .use(router.allowedMethods());
+    return app.use(router.routes()).use(router.allowedMethods());
 };
 
 const insertServices = (services: Record<any, unknown>) => (
-    (app: Koa<any, any>) => {
-        return Object.assign(app, {
-            context: services,
-        });
-    }
-);
+    app: Koa<any, any>,
+) => {
+    return Object.assign(app, {
+        context: services,
+    });
+};
 
 const serviceInitiator = (
     configuration: appConfiguration,
@@ -45,27 +46,24 @@ const serviceInitiator = (
 
     try {
         const solvedAcc = await acc;
-        const serviceInstance = service.init instanceof Promise
-            ? await service.init(configuration, servicesLogger)
-            : service.init(configuration, servicesLogger);
+        const serviceInstance =
+            service.init instanceof Promise
+                ? await service.init(configuration, servicesLogger)
+                : service.init(configuration, servicesLogger);
 
         // In case the service failed to initialize.
         if (!serviceInstance) {
             throw new Error();
         }
 
-        mainLogger.info(
-            `Initialized service ${service.name} at ${new Date()}`,
-        );
+        mainLogger.info(`Initialized service ${service.name} at ${new Date()}`);
 
         return Object.assign(solvedAcc, {
             [`${service.name}`]: serviceInstance,
         });
     } catch {
         if (mainLogger.isFatalEnabled()) {
-            mainLogger.fatal(
-                `Failed to initialize service ${service.name} !`,
-            );
+            mainLogger.fatal(`Failed to initialize service ${service.name} !`);
         }
     }
 };
@@ -75,12 +73,9 @@ const main = async (): Promise<any> => {
     setupEnv();
 
     const koa = new Koa();
-    const router = new Router();
+    const koaRouter = new Router();
 
-    const configFolderPath = relative(
-        __dirname,
-        './config',
-    );
+    const configFolderPath = relative(__dirname, './config');
 
     // * Finished stage 1 (load config).
     const configuration = await loadConfig(
@@ -88,10 +83,11 @@ const main = async (): Promise<any> => {
         true,
         configFolderPath,
     );
+
+    const koaConf = extractKoaConf(configuration.server);
+
     // * Finished stage 2 (setup logger).
-    const loggerObj = configure(
-        configuration.services.logger,
-    );
+    const loggerObj = configure(configuration.services.logger);
 
     /*
      * Services log into a different category.
@@ -109,23 +105,22 @@ const main = async (): Promise<any> => {
       Therefore allowing the functions access to all they need.
     */
     const initService = serviceInitiator(configuration, loggerObj);
-    const initializedServices = await services
-        .reduce(initService, Promise.resolve({ logger: loggerObj }));
+    const initializedServices = await services.reduce(
+        initService,
+        Promise.resolve({ logger: loggerObj }),
+    );
 
     // Finished stage 4 (Mount Modules)
     // All modules are declared with declareAppModule (lib folder)
     // Therefore all of them receive a router and give it back,
     // So it's safe to just use compose and be done with it.
-    const route = compose(
-        router,
-        ...middlewares,
-        ...funcs,
-    );
+    const router = compose(koaRouter, ...middlewares, ...funcs);
 
     const app = compose(
         koa,
         insertServices(initializedServices),
-        mountRouter(route),
+        mountRouter(router),
+        assign(koaConf),
     );
 
     // * Finished stage 6 (listen).
