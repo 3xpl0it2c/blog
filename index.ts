@@ -11,7 +11,7 @@
 import { relative } from 'path';
 import { default as Koa } from 'koa';
 import { config as setupEnv } from 'dotenv';
-import { configure, Log4js } from 'log4js';
+import { configure, Log4js, Logger } from 'log4js';
 import Router from 'koa-router';
 
 import { default as loadConfig } from '@config';
@@ -118,9 +118,9 @@ const main = async (): Promise<any> => {
 
     const app = compose(
         koa,
+        assign(koaConf),
         insertServices(initializedServices),
         mountRouter(router),
-        assign(koaConf),
     );
 
     // * Finished stage 6 (listen).
