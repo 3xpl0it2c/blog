@@ -1,2 +1,2 @@
-export * from './verifyEmail';
-
+export * from './sendMail';
+export * from './sendVerificationEmail';

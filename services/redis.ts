@@ -2,6 +2,8 @@ import { default as Redis } from 'ioredis';
 import { Service, appConfiguration } from '@interfaces';
 import { Logger } from 'log4js';
 
+const SERVICE_NAME = 'redis';
+
 const init = async (appConf: appConfiguration, logger: Logger) => {
     const serviceConf = appConf.services.redis;
 
@@ -16,12 +18,12 @@ const init = async (appConf: appConfiguration, logger: Logger) => {
     } catch (why) {
         logger.debug(
             `Failed to connect to redis because: \n${why}\n` +
-            `Used configuration: ${serviceConf}`,
+                `Used configuration: ${serviceConf}`,
         );
     }
 };
 
 export default {
-    name: 'redis',
+    name: SERVICE_NAME,
     init,
 } as Service;

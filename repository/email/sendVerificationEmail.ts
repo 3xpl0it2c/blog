@@ -1,32 +1,40 @@
-import { nanoid } from 'nanoid';
-import { Transporter } from 'nodemailer';
+import { sendMail } from './sendMail';
+import { SendMailOptions, Transporter } from 'nodemailer';
 import { Logger } from 'log4js';
-import { MailOptions } from 'nodemailer/lib/json-transport';
 
-export const verifyEmail = (
-    emailAddress: string,
-    messageOptions?: MailOptions,
-) => async (
-    mailTransport: Transporter,
-    logger: Logger,
-): Promise<boolean> => {
-    const message: MailOptions = {
-        to: emailAddress,
-        ...messageOptions,
+const verificationLink = (verificationToken) =>
+    `https://mywebsitename.com/api/email/verify?token=${verificationToken}`;
+
+const template = (userName: string) => (verificationToken: string) => `
+        <html>
+            <body>
+                <h1>Hello ${userName}, it seems like you tried to register with this email address</h1>
+                <p>
+                    You can click <a href="${verificationLink(
+        verificationToken,
+    )}" >here</a> in order to verify your email.<br />
+                    Or, you just use this link if that does not work for you:<br/>
+                    ${verificationLink(verificationToken)}
+                </p>
+            </body>
+        </html>
+`;
+
+export const sendVerificationEmail = (
+    to: string,
+    userName: string,
+    verificationToken: string,
+    websiteName: string,
+    options: SendMailOptions,
+) => (transport: Transporter, logger: Logger): Promise<any> => {
+    const messageTitle = `${websiteName} - Verify Your Email Address`;
+    const html = template(userName)(verificationToken);
+
+    const mailOptions = {
+        subject: messageTitle,
+        html,
+        ...options,
     };
 
-    const onSuccess = (): boolean => true;
-    const onError = (why: any): boolean => {
-        logger.error(`Failed to send verification email`);
-        logger.debug(
-            `sendVerificationEmail.ts-Failed to send verification mail-${why}`,
-        );
-
-        return false;
-    };
-
-    return mailTransport
-        .sendMail(message)
-        .then(onSuccess)
-        .catch(onError);
+    return sendMail(to, mailOptions)(transport, logger);
 };

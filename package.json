@@ -8,12 +8,13 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-      "test": "jest",
-      "build": "tsc",
-      "start": "yarn build && node dist/index.js"
+    "test": "jest",
+    "build": "tsc",
+    "start": "yarn build && node dist/index.js"
   },
   "dependencies": {
     "argon2": "^0.26.2",
+    "crocks": "^0.12.4",
     "dotenv": "^8.2.0",
     "formidable": "^1.2.2",
     "ioredis": "^4.17.3",

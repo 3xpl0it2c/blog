@@ -36,5 +36,6 @@ module.exports = {
         ],
         'max-depth': ['warn', 4],
         'valid-jsdoc': 'off',
+        'new-cap': 'off', // Crocks uses functions like Left and so forth.
     },
 };

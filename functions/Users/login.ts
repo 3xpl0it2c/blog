@@ -65,10 +65,10 @@ const handler = async (ctx: Context) => {
             jsonWebToken && refreshToken
                 ? successfulResponse(ctx, jsonWebToken, name, refreshToken)
                 : httpError(
-                      ctx,
-                      'Internal Server Error',
-                      HttpStatusCodes.INTERNAL_SERVER_ERROR,
-                  );
+                    ctx,
+                    'Internal Server Error',
+                    HttpStatusCodes.INTERNAL_SERVER_ERROR,
+                );
         } else {
             httpError(ctx, 'Invalid credentials', HttpStatusCodes.BAD_REQUEST);
         }

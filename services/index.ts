@@ -5,4 +5,5 @@ import { default as mail } from './mail';
 export default [
     slonik,
     redis,
+    mail,
 ];

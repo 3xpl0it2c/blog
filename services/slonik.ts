@@ -4,7 +4,7 @@ import { createPool, DatabaseConnectionType, sql } from 'slonik';
 import { appConfiguration } from '../interfaces/appConfig';
 import { Service } from '../interfaces/service';
 
-const serviceName = 'slonik';
+const SERVICE_NAME = 'slonik';
 
 const init = async (
     conf: appConfiguration,
@@ -22,18 +22,21 @@ const init = async (
         } else {
             throw new Error(
                 `Test query failed !` +
-                `expected to recieve one row and one column equal to 2 !` +
-                `Instead Recieved: ${testQuery}`);
+                    `expected to recieve one row and one column equal to 2 !` +
+                    `Instead Recieved: ${testQuery}`,
+            );
         }
     } catch (why) {
-        logger.fatal(`Service ${serviceName} failed to start !`);
-        logger.debug(`Service ${serviceName} failed to start because:\n ${why}`);
-    };
+        logger.fatal(`Service ${SERVICE_NAME} failed to start !`);
+        logger.debug(
+            `Service ${SERVICE_NAME} failed to start because:\n ${why}`,
+        );
+    }
 
     return null;
 };
 
 export default {
-    name: serviceName,
+    name: SERVICE_NAME,
     init,
 } as Service;

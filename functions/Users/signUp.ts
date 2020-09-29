@@ -22,8 +22,8 @@ import { default as Joi } from '@hapi/joi';
 import { nanoid } from 'nanoid/async';
 
 import { HttpStatusCodes } from '@interfaces';
-import { declareAppModule } from '@lib';
-import { writeUser } from '@repository';
+import { declareAppModule, log, compose } from '@lib';
+import { writeUser, sendVerificationEmail } from '@repository';
 
 const schema = Joi.object({
     name: Joi.string().alphanum().max(30).min(3).required(),
@@ -45,28 +45,99 @@ const response = (
     };
 };
 
-const succesfullResponse = (ctx: Context, userId: string) => {
+const failedResponse = (
+    ctx: Context,
+    httpStatusCode: number,
+    errorMessage: string,
+) => {
+    response(ctx, false, httpStatusCode, errorMessage);
+
+    return errorMessage;
+};
+
+const succesfullResponse = (ctx: Context) => (userId: string): string => {
     response(ctx, userId, HttpStatusCodes.RESOURCE_CREATED, null);
+
+    return userId;
 };
 
 const handler = async (ctx: Context) => {
-    try {
-        const newUser = await schema.validateAsync(ctx.query);
-        const verificationToken = await nanoid();
+    const logError = log(ctx.logger, 'error');
+    const logInfo = log(ctx.logger, 'info');
 
-        const newUserId = await writeUser(newUser, verificationToken)(
+    const newUser = await schema
+        .validateAsync(ctx.query)
+        .then((x) => x)
+        .catch((why) => {
+            const logErrMsg = `Blocked sign up attempt - bad schema - ${why}`;
+
+            return logError(logErrMsg)(why);
+        });
+
+    if (!newUser) {
+        const httpResponseErr = 'Schema mismatch';
+
+        return failedResponse(
+            ctx,
+            HttpStatusCodes.BAD_REQUEST,
+            httpResponseErr,
+        );
+    }
+
+    const verificationToken = nanoid()
+        .then((x) => x)
+        .catch();
+
+    // So I could compose() it.
+    const writeUserWrap = async (emailVerificationToken: Promise<string>) =>
+        await writeUser(newUser, await emailVerificationToken)(
             ctx.slonik,
             ctx.logger,
         );
 
-        if (newUserId) {
-            succesfullResponse(ctx, newUserId);
-        } else {
-            throw new Error();
-        }
-    } catch (why) {
-        response(ctx, false, HttpStatusCodes.BAD_REQUEST, '');
+    const verificationMailWrap = async (
+        emailVerificationToken: Promise<string>,
+    ) => {
+        const { email, firstName } = newUser;
+
+        sendVerificationEmail(
+            email,
+            firstName,
+            await emailVerificationToken,
+            ctx.app_name,
+            {},
+        )(ctx.mailer, ctx.logger)
+            .then(() => {
+                const logMessage = `Sent verification mail to ${email}`;
+
+                return logInfo(logMessage);
+            })
+            .catch(logError);
+
+        return emailVerificationToken;
+    };
+
+    const newUserId = await compose(
+        verificationToken,
+        verificationMailWrap,
+        writeUserWrap,
+    );
+
+    if (newUserId) {
+        const insertedUserMsg = `Inserted new user to db - id ${newUserId}`;
+
+        compose(newUserId, logInfo(insertedUserMsg), succesfullResponse(ctx));
+    } else {
+        const failedInsertingUserMsg = 'Could not insert user';
+
+        failedResponse(
+            ctx,
+            HttpStatusCodes.INTERNAL_SERVER_ERROR,
+            failedInsertingUserMsg,
+        );
     }
+
+    return ctx;
 };
 
 export default declareAppModule({

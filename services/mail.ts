@@ -1,10 +1,17 @@
-import { Service } from '@interfaces';
+import { Service, appConfiguration } from '@interfaces';
+import { createTransport } from 'nodemailer';
 
-const init = async () => {
-    return 'Use Nodemailer';
+const SERVICE_NAME = 'mail';
+
+const init = async (appConf: appConfiguration) => {
+    const trasportConfig = appConf.services.mailer;
+
+    const transporter = createTransport(trasportConfig);
+
+    return transporter;
 };
 
 export default {
-    name: 'mail',
+    name: SERVICE_NAME,
     init,
 } as Service;
