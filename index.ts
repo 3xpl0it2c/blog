@@ -11,7 +11,7 @@
 import { relative } from 'path';
 import { default as Koa } from 'koa';
 import { config as setupEnv } from 'dotenv';
-import { configure, Log4js, Logger } from 'log4js';
+import { configure, Log4js } from 'log4js';
 import Router from 'koa-router';
 
 import { default as loadConfig } from '@config';
@@ -20,6 +20,7 @@ import services from '@services';
 import { default as middlewares } from '@middleware';
 import { default as funcs } from '@functions';
 import { Service, appConfiguration } from '@interfaces';
+import { tryCatch } from 'lib/tryCatch';
 
 const koaConfKeys = ['silent', 'subDomainOffset', 'keys', 'proxy', 'env'];
 
@@ -32,9 +33,15 @@ const mountRouter = (router: Router) => (app: Koa): Koa<any, any> => {
 const insertServices = (services: Record<any, unknown>) => (
     app: Koa<any, any>,
 ) => {
-    return Object.assign(app, {
-        context: services,
-    });
+    return Object
+        .keys(services)
+        .reduce((acc, key) => {
+            Object.defineProperty(app.context, key, {
+                get: () => services[key],
+            });
+
+            return acc;
+        }, app);
 };
 
 const serviceInitiator = (
@@ -44,28 +51,37 @@ const serviceInitiator = (
     const servicesLogger = logger.getLogger('services');
     const mainLogger = logger.getLogger('init');
 
-    try {
+    const main = async () => {
         const solvedAcc = await acc;
         const serviceInstance =
-            service.init instanceof Promise
-                ? await service.init(configuration, servicesLogger)
-                : service.init(configuration, servicesLogger);
+        service.init instanceof Promise
+            ? await service.init(configuration, servicesLogger)
+            : service.init(configuration, servicesLogger);
 
         // In case the service failed to initialize.
         if (!serviceInstance) {
             throw new Error();
         }
 
-        mainLogger.info(`Initialized service ${service.name} at ${new Date()}`);
+        mainLogger.info(`Initialized service ${service.name}`);
 
-        return Object.assign(solvedAcc, {
+        return assign({
             [`${service.name}`]: serviceInstance,
-        });
-    } catch {
-        if (mainLogger.isFatalEnabled()) {
-            mainLogger.fatal(`Failed to initialize service ${service.name} !`);
-        }
-    }
+        })(solvedAcc);
+    };
+
+    const onSuccess = <T extends any>(x: T): T => x;
+    const onError = (why: Error) => {
+        mainLogger.fatal(`Failed to initiate service ${service.name} `);
+        mainLogger.info(`${why}`);
+    };
+
+
+    return tryCatch(
+        main,
+        onSuccess,
+        onError,
+    );
 };
 
 const main = async (): Promise<any> => {

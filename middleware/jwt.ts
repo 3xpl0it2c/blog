@@ -6,8 +6,13 @@
  * */
 
 import { declareAppModule } from '@lib';
+import { verify } from 'jsonwebtoken';
 
-const handler = () => {};
+import { Context, Next } from 'koa';
+
+const handler = async (ctx: Context, next?: Next) => {
+    
+};
 
 export default declareAppModule({
     path: '*',
