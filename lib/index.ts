@@ -11,3 +11,4 @@ export * from './retry';
 export * from './assign';
 export * from './eitherSchema';
 export * from './log';
+export * from './identity';

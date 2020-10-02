@@ -6,3 +6,4 @@ export * from './emptyObj';
 export * from './module';
 export * from './service';
 export * from './httpConstants';
+export * from './identity';
