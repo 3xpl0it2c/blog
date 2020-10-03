@@ -20,7 +20,6 @@ import services from '@services';
 import { default as middlewares } from '@middleware';
 import { default as funcs } from '@functions';
 import { Service, appConfiguration } from '@interfaces';
-import { tryCatch } from 'lib/tryCatch';
 
 const koaConfKeys = ['silent', 'subDomainOffset', 'keys', 'proxy', 'env'];
 
@@ -42,38 +41,35 @@ const insertServices = (services: Record<any, unknown>) => (
     }, app);
 };
 
-const serviceInitiator = (
-    configuration: appConfiguration,
-    logger: Log4js,
-) => async (acc: Promise<any>, service: Service) => {
+const serviceInitiator = (configuration: appConfiguration, logger: Log4js) => {
+    const onFailure = (name: string): string =>
+        `Could not initiate service: ${name}`;
+    const onSuccess = (name: string): string => `Initialized service ${name}`;
     const servicesLogger = logger.getLogger('services');
     const mainLogger = logger.getLogger('init');
 
-    const main = async () => {
-        const solvedAcc = await acc;
+    return async (service: Service) => {
+        const failMessage = onFailure(service.name);
+        const successMessage = onSuccess(service.name);
+
         const serviceInstance =
             service.init instanceof Promise
                 ? await service.init(configuration, servicesLogger)
                 : service.init(configuration, servicesLogger);
 
-        // In case the service failed to initialize.
+        // If you can't connect to your database, what can you do exactly ?
+        // Services are important, as much as the app itself.
         if (!serviceInstance) {
-            throw new Error();
+            mainLogger.fatal(failMessage);
+            throw new Error(failMessage);
         }
 
-        mainLogger.info(`Initialized service ${service.name}`);
+        mainLogger.info(successMessage);
 
-        return assign({
+        return {
             [`${service.name}`]: serviceInstance,
-        })(solvedAcc);
+        };
     };
-
-    const onError = (why: Error) => {
-        mainLogger.fatal(`Failed to initiate service ${service.name} `);
-        mainLogger.info(`${why}`);
-    };
-
-    return tryCatch(await main(), onError);
 };
 
 const main = async (): Promise<any> => {
@@ -95,27 +91,20 @@ const main = async (): Promise<any> => {
     const koaConf = extractKoaConf(configuration.server);
 
     // * Finished stage 2 (setup logger).
-    const loggerObj = configure(configuration.services.logger);
-
-    /*
-     * Services log into a different category.
-     * Therefore we keep the original logger object.
-     * (Instead of just calling getLogger directly)
-     */
-    const logger = loggerObj.getLogger('init');
+    const logger = configure(configuration.services.logger);
 
     // * Finished stage 3 (init services).
     /*
-    * This object includes certain services that the functions require -
-    * - In order to function properly.
-    * Examples include a logger, a database client and so forth.
-      This file later on injects the services object into koa's context,
-      Therefore allowing the functions access to all they need.
-    */
-    const initService = serviceInitiator(configuration, loggerObj);
-    const initializedServices = await services.reduce(
-        initService,
-        Promise.resolve({ logger: loggerObj }),
+     * This object includes certain services that the functions require -
+     * - In order to function properly.
+     * Examples include a logger, a database client and so forth.
+     */
+    const initService = serviceInitiator(configuration, logger);
+    const servicesPromise = services.map(initService);
+    const x = await Promise.all(servicesPromise);
+    const initializedServices = x.reduce(
+        (acc, current) => assign(current)(acc),
+        Promise.resolve({ logger }),
     );
 
     // Finished stage 4 (Mount Modules)
