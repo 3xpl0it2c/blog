@@ -3,8 +3,6 @@ import { MailOptions } from 'nodemailer/lib/json-transport';
 import { Logger } from 'log4js';
 import { log } from '@lib';
 
-// This code is designed awfuly.
-// Needs attention.
 
 export const sendMail = (
     emailAddress: string,
@@ -16,7 +14,7 @@ export const sendMail = (
     const onError = log(logger, 'error')(ON_SUCCESS_MSG);
     const onSuccess = log(logger, 'info')(ON_FAILURE_MSG);
 
-    // * Might need to declare a constat for the 'from' field.
+    // * Might need to declare a constant for the 'from' field.
     const message: MailOptions = {
         to: emailAddress,
         disableFileAccess: true,

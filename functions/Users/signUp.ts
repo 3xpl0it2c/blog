@@ -22,7 +22,7 @@ import { default as Joi } from '@hapi/joi';
 import { nanoid } from 'nanoid/async';
 
 import { HttpStatusCodes } from '@interfaces';
-import { declareAppModule, log, compose } from '@lib';
+import { declareAppModule, log, compose, httpError } from '@lib';
 import { writeUser, sendVerificationEmail } from '@repository';
 
 const schema = Joi.object({
@@ -45,17 +45,7 @@ const response = (
     };
 };
 
-const failedResponse = (
-    ctx: Context,
-    httpStatusCode: number,
-    errorMessage: string,
-) => {
-    response(ctx, false, httpStatusCode, errorMessage);
-
-    return errorMessage;
-};
-
-const succesfullResponse = (ctx: Context) => (userId: string): string => {
+const successfulResponse = (ctx: Context) => (userId: string): string => {
     response(ctx, userId, HttpStatusCodes.RESOURCE_CREATED, null);
 
     return userId;
@@ -67,7 +57,9 @@ const handler = async (ctx: Context) => {
 
     const newUser = await schema
         .validateAsync(ctx.query)
-        .then((x) => x)
+        .then((schema) => {
+            return log('')(schema);
+        })
         .catch((why) => {
             const logErrMsg = `Blocked sign up attempt - bad schema - ${why}`;
 
@@ -77,18 +69,16 @@ const handler = async (ctx: Context) => {
     if (!newUser) {
         const httpResponseErr = 'Schema mismatch';
 
-        return failedResponse(
+        return httpError(
             ctx,
-            HttpStatusCodes.BAD_REQUEST,
             httpResponseErr,
+            HttpStatusCodes.BAD_REQUEST
         );
     }
 
-    const verificationToken = nanoid()
-        .then((x) => x)
-        .catch();
+    const verificationToken = nanoid();
 
-    // So I could compose() it.
+
     const writeUserWrap = async (emailVerificationToken: Promise<string>) =>
         await writeUser(newUser, await emailVerificationToken)(
             ctx.slonik,
@@ -126,14 +116,18 @@ const handler = async (ctx: Context) => {
     if (newUserId) {
         const insertedUserMsg = `Inserted new user to db - id ${newUserId}`;
 
-        compose(newUserId, logInfo(insertedUserMsg), succesfullResponse(ctx));
+        compose(
+            newUserId,
+            logInfo(insertedUserMsg),
+            successfulResponse(ctx),
+        );
     } else {
         const failedInsertingUserMsg = 'Could not insert user';
 
-        failedResponse(
+        httpError(
             ctx,
-            HttpStatusCodes.INTERNAL_SERVER_ERROR,
             failedInsertingUserMsg,
+            HttpStatusCodes.INTERNAL_SERVER_ERROR,
         );
     }
 
