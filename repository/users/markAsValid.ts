@@ -1,13 +1,17 @@
+// ! See if we can fix anything in here.
+
 import { sql, DatabasePoolType } from 'slonik';
-import { Logger } from 'log4js';
+// import { Logger } from 'log4js';
 import { pick } from '@lib';
+
 /**
  * @desc Receives a verification token and sets the user as verified.
  * @param {string} token - the key by which the user is found.
  * @returns string -
  */
+
 export const markUserAsValid = (token: string) => async (
-    logger: Logger,
+//    logger: Logger,
     slonik: DatabasePoolType,
 ): Promise<[ string, string ]> => {
     if (!token) return ['', ''];

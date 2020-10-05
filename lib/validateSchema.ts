@@ -9,7 +9,7 @@ export const schema = (schema: Schema, ctx: Context) => (
     onError: string,
     internalOnError: (e: Error) => string,
 ) => (
-    logInfo: logFunc,
+    logInfo: (s: string) => Identity<any>,
     logError: (s: string) => Identity<any>,
 ) => {
     return async (candidate: unknown): Promise<[boolean, any]> => {

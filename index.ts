@@ -7,6 +7,7 @@
 5.Listen.
 
 */
+import 'module-alias/register';
 
 import { relative } from 'path';
 import { default as Koa } from 'koa';
@@ -15,7 +16,7 @@ import { configure, Log4js } from 'log4js';
 import Router from 'koa-router';
 
 import { default as loadConfig } from '@config';
-import { compose, pick, assign, identity } from '@lib';
+import { compose, pick, assign } from '@lib';
 import services from '@services';
 import { default as middlewares } from '@middleware';
 import { default as funcs } from '@functions';
@@ -76,8 +77,8 @@ const main = async (): Promise<any> => {
     // * Required by the 'useValueFromEnv' config hook.
     setupEnv();
 
-    const koa = new Koa();
     const koaRouter = new Router();
+    const koa = new Koa();
 
     const configFolderPath = relative(__dirname, './config');
 

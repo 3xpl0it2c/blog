@@ -6,12 +6,14 @@
  * */
 
 import { declareAppModule } from '@lib';
-import { verify } from 'jsonwebtoken';
+// import { verify } from 'jsonwebtoken';
 
 import { Context, Next } from 'koa';
 
-const handler = async (ctx: Context, next?: Next) => {
-    
+const handler = async (ctx: Context, next: Next) => {
+    await next();
+
+    return ctx;
 };
 
 export default declareAppModule({

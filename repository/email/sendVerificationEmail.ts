@@ -2,9 +2,10 @@ import { sendMail } from './sendMail';
 import { SendMailOptions, Transporter } from 'nodemailer';
 import { Logger } from 'log4js';
 
-const verificationLink = (verificationToken) =>
+const verificationLink = (verificationToken: string) =>
     `https://mywebsitename.com/api/email/verify?token=${verificationToken}`;
 
+// ? Should move to another, separate file (maybe even with ejs ?)
 const template = (userName: string) => (verificationToken: string) => `
         <html>
             <body>

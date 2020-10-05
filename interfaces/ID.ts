@@ -1,3 +1,1 @@
-type ID = string;
-
-export default ID;
+export type ID = string;

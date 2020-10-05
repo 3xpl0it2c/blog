@@ -31,6 +31,7 @@ const handler = async (ctx: Context, next?: Next): Promise<void> => {
     try {
         const articleBrief: ArticleInitiative = pick(requiredFields)(ctx.query);
         const safeArticleBrief = await ArticleInitiativeJoi.validateAsync(articleBrief);
+        console.log(`Stub !\n: ${safeArticleBrief}`);
     } catch (e) {
         void 0;
     }

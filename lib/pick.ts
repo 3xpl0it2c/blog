@@ -36,6 +36,7 @@ const pick = (schema: Record<string, any> | string[]) => (
             acc?.__missing
                 ? acc.__missing.push(field) // Impure, but much simpler.
                 : (acc.__missing = [field]);
+            return acc;
         }
     }, {});
 };

@@ -1,4 +1,4 @@
-import { Log4js } from 'log4js';
+import { Logger } from 'log4js';
 import { createPool, DatabaseConnectionType, sql } from 'slonik';
 
 import { appConfiguration } from '../interfaces/appConfig';
@@ -8,10 +8,9 @@ const SERVICE_NAME = 'slonik';
 
 const init = async (
     conf: appConfiguration,
-    logObj: Log4js,
+    logger: Logger,
 ): Promise<DatabaseConnectionType | null> => {
     const { connectionURI } = conf.services.slonik;
-    const logger = logObj.getLogger('services');
 
     try {
         const pool = createPool(connectionURI);
@@ -22,8 +21,8 @@ const init = async (
         } else {
             throw new Error(
                 `Test query failed !` +
-                    `expected to recieve one row and one column equal to 2 !` +
-                    `Instead Recieved: ${testQuery}`,
+                    `expected to receive one row and one column equal to 2 !` +
+                    `Instead Received: ${testQuery}`,
             );
         }
     } catch (why) {

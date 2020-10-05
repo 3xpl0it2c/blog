@@ -13,16 +13,14 @@ type loggerLevel =
 
 
 // We Either return an identity or return the log message back.
-export type logFunction<T> = (s: string) => Identity<T> | ((val: T) => string);
+export type logFunction<T> = (s: string) => Identity<T>;
 
 /*
- * @desc Takes a value and a message, logs the message and returns the value.
+ * @desc Takes a value and a message, logs the message and returns an identity.
  * */
-export const log = <T>(
+export const log = (
     logger: Logger,
     level: loggerLevel,
-): logFunction<T> => (
+)=> (
     message: string,
-): (Identity<T> | ((val: T) => string)) =>
-    (value: T) => (logger[level](message), value ?? message);
-
+) => <T>(value: T): T => (logger[level](message), value);

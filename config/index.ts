@@ -64,14 +64,15 @@ export default async (
             throw configFile;
         case !configFile:
             output = defaults;
-            throw new Error('Config is empty');
+            console.error('Config is empty');
+            break;
         case assignDefaults:
             output = Object.assign(defaults, configFile);
             break;
         default:
             output = configFile;
             break;
-        };
+        }
     } catch (error) {
         switch (true) {
         case env === 'testing':
@@ -80,13 +81,13 @@ export default async (
         // Invalid file path
         case error.code === 'ENOENT':
             console.warn(
-                'No matching config file for current environment.',
+                `No matching config file for current environment: ${env}`,
             );
             output = defaults;
             break;
         default:
             console.error(error.message);
-        };
+        }
     } finally {
         return output;
     };

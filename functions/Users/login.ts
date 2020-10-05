@@ -20,7 +20,7 @@ In case credentials are incorrect:
 */
 
 import { Context, Next } from 'koa';
-import { default as Joi } from '@hapi/joi';
+import Joi from 'joi';
 
 import { validateUser, genRefreshToken } from '@repository';
 import { HttpStatusCodes } from '@interfaces';

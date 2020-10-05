@@ -14,3 +14,5 @@ This function should:
         Respond with a successful message.
 
 */
+
+export const stub = '';

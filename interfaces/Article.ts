@@ -1,4 +1,4 @@
-import ID from '@interfaces/ID';
+import { ID } from '@interfaces';
 
 export type Article = {
     title: string;

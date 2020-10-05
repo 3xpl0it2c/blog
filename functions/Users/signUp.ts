@@ -18,7 +18,7 @@ If the credentials are partially invalid:
 */
 
 import { Context } from 'koa';
-import { default as Joi } from '@hapi/joi';
+import Joi from 'joi';
 import { nanoid } from 'nanoid/async';
 
 import { HttpStatusCodes } from '@interfaces';
@@ -57,9 +57,7 @@ const handler = async (ctx: Context) => {
 
     const newUser = await schema
         .validateAsync(ctx.query)
-        .then((schema) => {
-            return log('')(schema);
-        })
+        .then(logInfo(''))
         .catch((why) => {
             const logErrMsg = `Blocked sign up attempt - bad schema - ${why}`;
 
@@ -72,7 +70,7 @@ const handler = async (ctx: Context) => {
         return httpError(
             ctx,
             httpResponseErr,
-            HttpStatusCodes.BAD_REQUEST
+            HttpStatusCodes.BAD_REQUEST,
         );
     }
 
