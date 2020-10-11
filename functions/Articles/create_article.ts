@@ -7,7 +7,7 @@
 /* eslint-disable max-len */
 
 import { Context, Next } from 'koa';
-import { object, string, number } from '@hapi/joi';
+import { object, string, number } from 'joi';
 import { pick } from '@lib';
 import { declareAppModule } from '@lib';
 import { ArticleInitiative } from '@interfaces';

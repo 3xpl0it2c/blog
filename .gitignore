@@ -9,3 +9,5 @@ yarn.lock
 config/*-config.json
 index.js
 TODO
+# This is generated while debugging, see config/default.json
+some_name.log

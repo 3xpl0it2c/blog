@@ -2,7 +2,7 @@
 TL;DR - Give this a string of some UUID/Random and an user object.
 
 1.Receive a random token (user for verification) and a user object.
-2.Hash the provided password/
+2.Hash the provided password.
 3.Grab the current date in ISO format.
 4.Insert all of this (user, hashed password, current date) into the db.
 5.Return the id of the newly created user.
@@ -34,7 +34,7 @@ export const writeUser = (user: User, verificationToken: string) => async (
             sql`, `,
         );
 
-        const { userId } = await slonik.connect((conn) => {
+        const { id: userId } = await slonik.connect((conn) => {
             return conn.one(sql`
                              INSERT INTO users
                              (
@@ -46,7 +46,7 @@ export const writeUser = (user: User, verificationToken: string) => async (
                                 verify_token
                              )
                              VALUES (${fields})
-                             RETURNING id AS userId;
+                             RETURNING id;
                              `);
         });
 

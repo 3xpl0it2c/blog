@@ -17,7 +17,7 @@ const handler = async (ctx: Context, next: Next) => {
 };
 
 export default declareAppModule({
-    path: '*',
+    path: '/',
     handler,
     httpMethod: 'ALL',
 });

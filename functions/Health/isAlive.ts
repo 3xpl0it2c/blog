@@ -6,12 +6,12 @@ This function should:
 
 */
 
-import { delcareAppModule } from '@lib';
+import { declareAppModule } from '@lib';
 import { HttpStatusCodes } from '@interfaces';
 import { Context, Next } from 'koa';
 
-const successfulResponse = (ctx: Context, message: string) => {
-    ctx.status = HttpStatusCodes;
+const successfulResponse = (ctx: Context) => (message: string) => {
+    ctx.status = HttpStatusCodes.SUCCESS;
     ctx.body = {
         message,
     };
@@ -20,12 +20,14 @@ const successfulResponse = (ctx: Context, message: string) => {
 };
 
 const handler = async (ctx: Context, next: Next) => {
-    await next();
-    ctx.body = 'OK';
-    return ctx;
-}
+    const okMessage = 'OK';
 
-export default delcareAppModule({
+    await next();
+
+    return successfulResponse(ctx)(okMessage);
+};
+
+export default declareAppModule({
     path: '/health/alive',
     httpMethod: 'GET',
     handler,

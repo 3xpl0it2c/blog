@@ -4,7 +4,7 @@ import * as Redis from 'ioredis';
 import { Logger } from 'log4js';
 import { responseOk, log, compose } from '@lib';
 
-const expirationDate = ms('15 minutes');
+const TOKEN_LIFE_DURATION = ms('15 minutes');
 
 const main = async (redis: Redis.Redis, logger: Logger): Promise<string> => {
     const logDebug = log(logger, 'debug');
@@ -44,9 +44,9 @@ const main = async (redis: Redis.Redis, logger: Logger): Promise<string> => {
     };
 
     // Set a refresh token that -
-    // Will remove itself in expirationDate milliseconds.
+    // Will remove itself in TOKEN_LIFE_DURATION milliseconds.
     return await redis
-        .set(randomUUID, '', 'PX', expirationDate, 'NX')
+        .set(randomUUID, '', 'PX', TOKEN_LIFE_DURATION, 'NX')
         .then(onSuccess)
         .catch(onFailure);
 };

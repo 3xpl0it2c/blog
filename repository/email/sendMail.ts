@@ -14,7 +14,7 @@ export const sendMail = (
     const onError = log(logger, 'error')(ON_SUCCESS_MSG);
     const onSuccess = log(logger, 'info')(ON_FAILURE_MSG);
 
-    // * Might need to declare a constant for the 'from' field.
+    // ? Might need to declare a constant for the 'from' field.
     const message: MailOptions = {
         to: emailAddress,
         disableFileAccess: true,

@@ -15,6 +15,8 @@ export const declareAppModule = ({
     path,
     handler }: Module): MountableModule => {
     return (router: Router) => {
+        if (path === 'ALL') return router.use(handler);
+
         switch (httpMethod) {
         // Self-Explanatory.
         case 'GET':

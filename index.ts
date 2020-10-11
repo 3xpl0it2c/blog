@@ -7,38 +7,57 @@
 5.Listen.
 
 */
+
+// * Resolves path aliases (@lib -> ../lib)
 import 'module-alias/register';
 
 import { relative } from 'path';
-import { default as Koa } from 'koa';
+import Koa from 'koa';
 import { config as setupEnv } from 'dotenv';
 import { configure, Log4js } from 'log4js';
 import Router from 'koa-router';
 
-import { default as loadConfig } from '@config';
+import loadConfig from '@config';
 import { compose, pick, assign } from '@lib';
 import services from '@services';
-import { default as middlewares } from '@middleware';
-import { default as funcs } from '@functions';
+import middlewares from '@middleware';
+import funcs from '@functions';
 import { Service, appConfiguration } from '@interfaces';
 
 const koaConfKeys = ['silent', 'subDomainOffset', 'keys', 'proxy', 'env'];
 
 const extractKoaConf = pick(koaConfKeys);
 
-const mountRouter = (router: Router) => (app: Koa): Koa<any, any> => {
-    return app.use(router.routes()).use(router.allowedMethods());
+const insertKoaConf = (config: Record<any, string>) => (app: Koa<any, any>) => {
+    const configKeys = Object.keys(config);
+
+    const convertToGetter = (object: Record<any, any>) => {
+        return (key: any) => ({ get: () => object[key]});
+    };
+
+    const configAsGetters = configKeys.map(convertToGetter(config));
+
+    return configKeys.reduce((acc, key, index) => {
+        // insert to the app a certain key and it's associated value.
+        // We have to use getters and Object.defineProperty.
+        Object.defineProperty(acc, key, configAsGetters[index]);
+        return acc;
+    }, app);
 };
 
-const insertServices = (services: Record<any, unknown>) => (
+const mountRouter = (router: Router) => (app: Koa): Koa<any, any> => {
+    return app
+        .use(router.routes())
+        .use(router.allowedMethods());
+};
+
+const insertServices = (services: Record<any, any>) => (
     app: Koa<any, any>,
 ) => {
-    return Object.keys(services).reduce((acc, key) => {
-        Object.defineProperty(app.context, key, {
-            get: () => services[key],
-        });
+    return Object.keys(services).reduce((app, key) => {
+        Object.defineProperty(app.context, key, services[key]);
 
-        return acc;
+        return app;
     }, app);
 };
 
@@ -49,7 +68,7 @@ const serviceInitiator = (configuration: appConfiguration, logger: Log4js) => {
     const servicesLogger = logger.getLogger('services');
     const mainLogger = logger.getLogger('init');
 
-    return async (service: Service) => {
+    return async (service: Service): Promise<any> => {
         const failMessage = onFailure(service.name);
         const successMessage = onSuccess(service.name);
 
@@ -75,10 +94,11 @@ const serviceInitiator = (configuration: appConfiguration, logger: Log4js) => {
 
 const main = async (): Promise<any> => {
     // * Required by the 'useValueFromEnv' config hook.
+    // * Loads all environment variables from a file named .env
     setupEnv();
 
-    const koaRouter = new Router();
     const koa = new Koa();
+    const koaRouter = new Router();
 
     const configFolderPath = relative(__dirname, './config');
 
@@ -102,10 +122,10 @@ const main = async (): Promise<any> => {
      */
     const initService = serviceInitiator(configuration, logger);
     const servicesPromise = services.map(initService);
-    const x = await Promise.all(servicesPromise);
-    const initializedServices = x.reduce(
+    const initializedServices = await Promise.allSettled(servicesPromise);
+    const servicesMap: Record<string, any> = initializedServices.reduce(
         (acc, current) => assign(current)(acc),
-        Promise.resolve({ logger }),
+        { logger: { get: () => logger } },
     );
 
     // Finished stage 4 (Mount Modules)
@@ -116,11 +136,12 @@ const main = async (): Promise<any> => {
 
     const app = compose(
         koa,
-        assign(koaConf),
-        insertServices(initializedServices),
+        insertKoaConf(koaConf),
+        insertServices(servicesMap),
         mountRouter(router),
     );
 
+    app.on('error', console.error);
     // * Finished stage 6 (listen).
     return (callback: () => void): void => {
         const { port, host } = configuration.server;

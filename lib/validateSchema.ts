@@ -1,7 +1,7 @@
 import { httpError } from '@lib';
 import { HttpStatusCodes, Identity } from '@interfaces';
 
-import { Schema } from '@hapi/joi';
+import { Schema } from 'joi';
 import { Context } from 'koa';
 
 export const schema = (schema: Schema, ctx: Context) => (
