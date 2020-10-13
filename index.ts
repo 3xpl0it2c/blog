@@ -11,7 +11,7 @@
 // * Resolves path aliases (@lib -> ../lib)
 import 'module-alias/register';
 
-import { relative } from 'path';
+import { resolve } from 'path';
 import Koa from 'koa';
 import { config as setupEnv } from 'dotenv';
 import { configure, Log4js } from 'log4js';
@@ -100,7 +100,7 @@ const main = async (): Promise<any> => {
     const koa = new Koa();
     const koaRouter = new Router();
 
-    const configFolderPath = relative(__dirname, './config');
+    const configFolderPath = resolve(__dirname, './config');
 
     // * Finished stage 1 (load config).
     const configuration = await loadConfig(

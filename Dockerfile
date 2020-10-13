@@ -1,10 +1,6 @@
-FROM node:lts-alpine
+FROM node:lts-alpine AS nodejs
 
-ENV YARN_VERSION 1.22.0
-ENV NODE_ENV production
-
-USER node
-WORKDIR /home/node/app
+ENV YARN_VERSION 1.22.10
 
 # Install yarn
 RUN apk add --no-cache --virtual .build-deps-yarn curl \
@@ -15,18 +11,21 @@ RUN apk add --no-cache --virtual .build-deps-yarn curl \
     && rm yarn-v$YARN_VERSION.tar.gz \
     && apk del .build-deps-yarn
 
-COPY ./dist ./
-COPY ./LICENSE ./
-COPY ./.env ./
-COPY ./yarn.lock ./
-COPY ./config/production-config.json ./
-COPY ./config/development-config.json ./
-COPY ./config/default.json ./
+RUN mkdir -p /home/node/app/node_modules && chown -R node:node /home/node/app
 
-# Install dependecies.
+USER node
+WORKDIR /home/node/app
+
+COPY --chown=node:node ./dist/ ./
+COPY --chown=node:node ./LICENSE ./
+COPY --chown=node:node ./.env ./
+COPY --chown=node:node ./yarn.lock ./
+#COPY ./config/production-config.json ./
+#COPY ./config/development-config.json ./
+COPY --chown=node:node ./config/default.json ./config/
+COPY --chown=node:node ./package.json ./
 RUN yarn install --pure-lockfile
 
-EXPOSE 8080
+EXPOSE 3000
 
-# We only copy the dist folder, therefore there is no need for stating dist/index.js
-CMD ["node", "index.js"]
+CMD ["nodejs", "index.js"]

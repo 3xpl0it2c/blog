@@ -13,11 +13,12 @@ import useValueFromENV from './hooks/useValueFromENV';
 import useMS from './hooks/useMS';
 
 import { appConfiguration } from '../interfaces/appConfig';
+import { assign } from '@lib';
 
 export const configReviver = (key: string, value: any): any => {
+    // * Use Hooks to verify api keys, escape special chars and so forth.
     // ! Never return undefined, void and so forth. (except null)
     // ! You never know what depends on your hook's return value.
-    // * Use Hooks to verify api keys, escape special chars and so forth.
 
     switch (key) {
     case 'port' || 'host':
@@ -39,8 +40,8 @@ const getDefaultConfig = async (path: PathLike = '.'): Promise<any> => {
     } catch (error) {
         if (error.code === 'ENOENT') {
             throw new Error(`Invalid default config path !\nPath: ${confPath}`);
-        };
-    };
+        }
+    }
 };
 
 
@@ -64,10 +65,10 @@ export default async (
             throw configFile;
         case !configFile:
             output = defaults;
-            console.error('Config is empty');
+            console.error('Config is empty, using defaults.');
             break;
         case assignDefaults:
-            output = Object.assign(defaults, configFile);
+            output = assign(defaults)(configFile);
             break;
         default:
             output = configFile;
@@ -90,5 +91,5 @@ export default async (
         }
     } finally {
         return output;
-    };
+    }
 };

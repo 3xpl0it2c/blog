@@ -55,13 +55,13 @@
     "typescript": "^3.9.6"
   },
   "_moduleAliases": {
-    "@root": "dist/",
-    "@config": "dist/config",
-    "@interfaces": "dist/interfaces/",
-    "@repository": "dist/repository",
-    "@lib": "dist/lib",
-    "@services": "dist/services",
-    "@functions": "dist/functions",
-    "@middleware": "dist/middleware"
+    "@root": "./",
+    "@config": "config",
+    "@interfaces": "interfaces",
+    "@repository": "repository",
+    "@lib": "lib",
+    "@services": "services",
+    "@functions": "functions",
+    "@middleware": "middleware"
   }
 }

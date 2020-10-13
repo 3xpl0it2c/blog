@@ -1,7 +1,7 @@
 node_modules
 dist/**
 ./secret
-./.env
+.env*
 spec.md
 yarn.lock
 .vscode

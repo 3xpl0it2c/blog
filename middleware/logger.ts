@@ -19,7 +19,7 @@ const handler = async (ctx: Context, next: Next) => {
     const logger = ctx.logger.getLogger();
     const { method: httpMethod, headers, url: requestURL } = ctx.req;
 
-    logger.info(`REQ ${httpMethod} ${requestURL} ${headers.referer}`);
+    logger.info(`REQ ${httpMethod} ${requestURL} ${headers['user-agent']}`);
 
     // Now we log our response.
     await next();
@@ -31,6 +31,6 @@ const handler = async (ctx: Context, next: Next) => {
 
 export default declareAppModule({
     httpMethod: 'ALL',
-    path: '/',
+    path: 'ALL',
     handler,
 });
