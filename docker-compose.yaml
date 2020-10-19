@@ -1,15 +1,38 @@
 version: "3.8"
 
 services:
-  nodejs:
-    build: .
+  reverse_proxy:
+    container_name: "reverse_proxy"
+    build: ./Docker/NGINX/NGINX.Dockerfile
+    restart: unless-stopped
     ports:
-      - "8080:8080"
-    volumes:
-      - ./dist:/home/node/app
-    links:
+      - "443:443"
+      - "80:80"
+    depends_on:
+      - nodejs
+
+  nodejs:
+    container_name: "nodejs"
+    build: ./Docker/Nodejs.Dockerfile
+    restart: unless-stopped
+    #volumes:
+    #  - ./log:/var/log/node_log
+    depends_on:
       - redis
+      - postgres
+
   redis:
-    image: redis
-volumes:
-  stub: {}
+    container_name: "redis"
+    build: ./Docker/Redis/Redis.Dockerfile
+    restart: unless-stopped
+
+  postgres:
+    container_name: "postgres"
+    image: postgres
+    restart: unless-stopped
+    environment:
+      - POSTGRES_PASSWORD
+
+networks:
+  app-network:
+    driver: bridge

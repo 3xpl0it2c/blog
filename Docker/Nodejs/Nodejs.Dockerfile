@@ -28,4 +28,4 @@ RUN yarn install --pure-lockfile
 
 EXPOSE 3000
 
-CMD ["nodejs", "index.js"]
+CMD ["node", "index.js"]

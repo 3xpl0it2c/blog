@@ -9,8 +9,12 @@
   "private": true,
   "scripts": {
     "test": "jest",
-    "build": "tsc",
-    "start": "yarn build && node dist/index.js"
+    "build:ts": "tsc && cp config/default.json ./dist/config/ && cp config/$NODE_ENV-config.json ./dist/config/",
+    "build:docker": "yarn build:ts && docker build --tag node_blog ./DockerFiles/Nodejs.Dockerfile",
+    "build": "yarn build:ts && docker-compose build",
+    "start:docker": "docker run -d -p 3000:3000 node_blog",
+    "start:local": "yarn build && node dist/index.js",
+    "start": "yarn build && docker-compose start"
   },
   "dependencies": {
     "argon2": "^0.26.2",
