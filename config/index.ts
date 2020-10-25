@@ -33,9 +33,7 @@ export const configReviver = (key: string, value: any): any => {
 const getDefaultConfig = async (path: PathLike = '.'): Promise<any> => {
     const confPath = resolve(__dirname, `${path}/default.json`);
     try {
-        const defaultConfig = await readJSONFile(
-            confPath,
-        );
+        const defaultConfig = await readJSONFile(confPath);
         return defaultConfig;
     } catch (error) {
         if (error.code === 'ENOENT') {
@@ -43,7 +41,6 @@ const getDefaultConfig = async (path: PathLike = '.'): Promise<any> => {
         }
     }
 };
-
 
 export default async (
     env = 'production',
@@ -79,7 +76,7 @@ export default async (
         case env === 'testing':
             output = defaults;
             break;
-        // Invalid file path
+            // Invalid file path
         case error.code === 'ENOENT':
             console.warn(
                 `No matching config file for current environment: ${env}`,

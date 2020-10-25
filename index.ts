@@ -32,7 +32,7 @@ const insertKoaConf = (config: Record<any, string>) => (app: Koa<any, any>) => {
     const configKeys = Object.keys(config);
 
     const convertToGetter = (object: Record<any, any>) => {
-        return (key: any) => ({ get: () => object[key]});
+        return (key: any) => ({ get: () => object[key] });
     };
 
     const configAsGetters = configKeys.map(convertToGetter(config));
@@ -46,14 +46,10 @@ const insertKoaConf = (config: Record<any, string>) => (app: Koa<any, any>) => {
 };
 
 const mountRouter = (router: Router) => (app: Koa): Koa<any, any> => {
-    return app
-        .use(router.routes())
-        .use(router.allowedMethods());
+    return app.use(router.routes()).use(router.allowedMethods());
 };
 
-const insertServices = (services: Record<any, any>) => (
-    app: Koa<any, any>,
-) => {
+const insertServices = (services: Record<any, any>) => (app: Koa<any, any>) => {
     return Object.keys(services).reduce((app, key) => {
         Object.defineProperty(app.context, key, services[key]);
 

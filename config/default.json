@@ -50,5 +50,8 @@
         }
     },
     "middleware": {
+        "jwt": {
+            "masterKey": "CUSTOM_SAUCE"
+        }
     }
 }

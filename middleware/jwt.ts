@@ -1,19 +1,28 @@
 /*
  * This middleware's purpose is to detect JWT tokens.
  * It does so by reading the Authorization header
- * After that - it injects the detected user id into app.context.state.user.
+ * After that - it injects the detected user id into context.state.user.
  * So that functions are able to dictate whether we have a logged-in user.
  * */
 
+import { promisify } from 'util';
 import { declareAppModule } from '@lib';
-// import { verify } from 'jsonwebtoken';
-
+import { verify } from 'jsonwebtoken';
 import { Context, Next } from 'koa';
 
 const handler = async (ctx: Context, next: Next) => {
-    await next();
+    const verifyJWTPromise = promisify(verify);
 
-    return ctx;
+    // TODO: Implement a way to dynmically access this secret.
+    const secret = 'CUSTOM_SAUCE';
+    // TODO: Validate input.
+    const token = ctx.headers['authorization'];
+
+    const tokenPayload = await verifyJWTPromise(token, secret);
+
+    ctx.state.user = tokenPayload ?? {};
+
+    return await next();
 };
 
 export default declareAppModule({

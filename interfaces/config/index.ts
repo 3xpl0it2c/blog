@@ -1,4 +1,5 @@
 import { servicesConfig } from './services';
+import { middlewareConfig } from './middleware';
 
 export type serverConfig = {
     host: string;
@@ -9,10 +10,6 @@ export type serverConfig = {
     env: string;
     subDomainOffset: string[];
 };
-
-// Currently we don't have any middleware yet,
-// So the middleware config is just.. unknown.
-export type middlewareConfig = Record<string, unknown>;
 
 export type appConfiguration = {
     name: string;

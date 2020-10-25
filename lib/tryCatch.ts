@@ -9,7 +9,7 @@
 import { identity } from '@lib';
 
 export const tryCatch = <T = any | Error>(
-    unsafe: (() => T),
+    unsafe: () => T,
     onSuccess: (x: T) => any,
     onError?: (e: Error) => any,
 ): any => {
