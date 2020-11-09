@@ -6,26 +6,29 @@
  * */
 
 import { promisify } from 'util';
-import { declareAppModule } from '@lib';
 import { verify } from 'jsonwebtoken';
 import { Context, Next } from 'koa';
+import { appConfiguration } from '@interfaces';
+import { declareMiddleware } from '@lib';
 
-const handler = async (ctx: Context, next: Next) => {
+const handler = (config: appConfiguration) => async (
+    ctx: Context,
+    next: Next,
+) => {
     const verifyJWTPromise = promisify(verify);
 
-    // TODO: Implement a way to dynmically access this secret.
-    const secret = 'CUSTOM_SAUCE';
+    const secret = config.middleware?.jwt.masterKey;
     // TODO: Validate input.
     const token = ctx.headers['authorization'];
 
-    const tokenPayload = await verifyJWTPromise(token, secret);
+    const tokenPayload = await verifyJWTPromise(token, secret ?? '');
 
     ctx.state.user = tokenPayload ?? {};
 
     return await next();
 };
 
-export default declareAppModule({
+export default declareMiddleware({
     path: '/',
     handler,
     httpMethod: 'ALL',

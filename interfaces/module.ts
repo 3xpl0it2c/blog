@@ -1,10 +1,11 @@
 import { Context, Next } from 'koa';
 import * as Router from 'koa-router';
+// import { appConfiguration } from '@interfaces';
 
-export type Module = {
-    path: 'ALL' | string;
-    handler: (ctx: Context, next: Next) => any;
-    httpMethod:
+// FIXME: You should not access files directly !
+import { middlewareConfig } from './config/middleware';
+
+export type HTTPMethod =
     | 'GET'
     | 'POST'
     | 'OPTIONS'
@@ -13,7 +14,22 @@ export type Module = {
     | 'PATCH'
     | 'HEAD'
     | 'ALL';
+
+export type KoaHandler = (ctx: Context, next: Next) => any;
+export type HTTPPath = 'ALL' | string;
+
+export type Module = {
+    path: HTTPPath;
+    handler: KoaHandler;
+    httpMethod: HTTPMethod;
 };
 
-// This type is created by the declareAppModule helper
 export type MountableModule = (router: Router) => Router;
+
+export type MiddlewareModule = {
+    path: HTTPPath;
+    handler: (c: middlewareConfig) => KoaHandler;
+    httpMethod: HTTPMethod;
+};
+
+export type MountableMiddleware = (c: middlewareConfig) => MountableModule;

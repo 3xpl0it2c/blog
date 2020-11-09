@@ -35,12 +35,11 @@ const insertKoaConf = (config: Record<any, string>) => (app: Koa<any, any>) => {
         return (key: any) => ({ get: () => object[key] });
     };
 
-    const configAsGetters = configKeys.map(convertToGetter(config));
-
-    return configKeys.reduce((acc, key, index) => {
+    return configKeys.reduce((acc, key) => {
         // insert to the app a certain key and it's associated value.
         // We have to use getters and Object.defineProperty.
-        Object.defineProperty(acc, key, configAsGetters[index]);
+        const keyToGetter = convertToGetter(config);
+        Object.defineProperty(acc, key, keyToGetter(key));
         return acc;
     }, app);
 };
@@ -128,7 +127,10 @@ const main = async (): Promise<any> => {
     // All modules are declared with declareAppModule (lib folder)
     // Therefore all of them receive a router and give it back,
     // So it's safe to just use compose and be done with it.
-    const router = compose(koaRouter, ...middlewares, ...funcs);
+    const initializedMiddleware = middlewares.map((middleware) =>
+        middleware(configuration.middleware),
+    );
+    const router = compose(koaRouter, ...initializedServices, ...funcs);
 
     const app = compose(
         koa,
@@ -137,7 +139,6 @@ const main = async (): Promise<any> => {
         mountRouter(router),
     );
 
-    app.on('error', console.error);
     // * Finished stage 6 (listen).
     return (callback: () => void): void => {
         const { port, host } = configuration.server;

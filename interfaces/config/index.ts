@@ -1,4 +1,5 @@
 import { servicesConfig } from './services';
+
 import { middlewareConfig } from './middleware';
 
 export type serverConfig = {

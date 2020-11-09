@@ -12,3 +12,4 @@ export * from './assign';
 export * from './log';
 export * from './identity';
 export * from './tryCatch';
+export * from './declareMiddleware';

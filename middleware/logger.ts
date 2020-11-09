@@ -12,10 +12,10 @@ For each response it logs:
 4.The length of the response.
 */
 
-import { declareAppModule } from '@lib';
+import { declareMiddleware } from '@lib';
 import { Context, Next } from 'koa';
 
-const handler = async (ctx: Context, next: Next) => {
+const handler = () => async (ctx: Context, next: Next) => {
     const logger = ctx.logger.getLogger();
     const { method: httpMethod, headers, url: requestURL } = ctx.req;
 
@@ -29,7 +29,7 @@ const handler = async (ctx: Context, next: Next) => {
     return ctx;
 };
 
-export default declareAppModule({
+export default declareMiddleware({
     httpMethod: 'ALL',
     path: 'ALL',
     handler,
