@@ -1,0 +1,19 @@
+#%RAML 1.0
+title: Blog
+description: reference medium-like blog app
+version: v1
+protocols: [ HTTPS ]
+mediaType: [ application/json ]
+types:
+    User:
+        type: object
+        properties:
+            id: string
+            displayName: string
+            firstName: string
+            lastName: string
+            email: string
+    Article:
+    Comment:
+    Error:
+    GeneralMessage:

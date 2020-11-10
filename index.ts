@@ -130,7 +130,8 @@ const main = async (): Promise<any> => {
     const initializedMiddleware = middlewares.map((middleware) =>
         middleware(configuration.middleware),
     );
-    const router = compose(koaRouter, ...initializedServices, ...funcs);
+
+    const router = compose(koaRouter, ...initializedMiddleware, ...funcs);
 
     const app = compose(
         koa,

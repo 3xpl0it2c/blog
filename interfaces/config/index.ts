@@ -16,5 +16,5 @@ export type appConfiguration = {
     name: string;
     server: serverConfig;
     services: servicesConfig;
-    middleware?: middlewareConfig;
+    middleware: middlewareConfig;
 };
