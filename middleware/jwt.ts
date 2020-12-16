@@ -8,17 +8,17 @@
 import { promisify } from 'util';
 import { verify } from 'jsonwebtoken';
 import { Context, Next } from 'koa';
-import { appConfiguration } from '@interfaces';
+import { middleConf } from '@interfaces';
 import { declareMiddleware } from '@lib';
 
-const handler = (config: appConfiguration) => async (
+const handler = (config: middleConf) => async (
     ctx: Context,
     next: Next,
 ) => {
     const verifyJWTPromise = promisify(verify);
 
-    const secret = config.middleware?.jwt.masterKey;
-    // TODO: Validate input.
+    const secret = config?.jwt.masterKey;
+    // FIXME: Validate input.
     const token = ctx.headers['authorization'];
 
     const tokenPayload = await verifyJWTPromise(token, secret ?? '');

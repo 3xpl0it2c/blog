@@ -1,9 +1,6 @@
 import { Context, Next } from 'koa';
 import * as Router from 'koa-router';
-// import { appConfiguration } from '@interfaces';
-
-// FIXME: You should not access files directly !
-import { middlewareConfig } from './config/middleware';
+import { middleConf } from '@interfaces';
 
 export type HTTPMethod =
     | 'GET'
@@ -26,10 +23,12 @@ export type Module = {
 
 export type MountableModule = (router: Router) => Router;
 
+export type MiddlewareHandler = (c: middleConf) => KoaHandler;
+
 export type MiddlewareModule = {
     path: HTTPPath;
-    handler: (c: middlewareConfig) => KoaHandler;
+    handler: MiddlewareHandler;
     httpMethod: HTTPMethod;
 };
 
-export type MountableMiddleware = (c: middlewareConfig) => MountableModule;
+export type MountableMiddleware = (c: middleConf) => MountableModule;

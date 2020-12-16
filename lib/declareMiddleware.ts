@@ -1,13 +1,13 @@
 import { declareAppModule } from '@lib';
 
 import {
-    appConfiguration,
+    middleConf,
     MiddlewareModule,
     MountableModule,
 } from '@interfaces';
 
 export const declareMiddleware = (middleware: MiddlewareModule) => (
-    c: appConfiguration,
+    c: middleConf,
 ): MountableModule => {
     const handler = middleware.handler(c);
 

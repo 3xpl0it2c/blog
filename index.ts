@@ -123,14 +123,13 @@ const main = async (): Promise<any> => {
         { logger: { get: () => logger } },
     );
 
-    // Finished stage 4 (Mount Modules)
-    // All modules are declared with declareAppModule (lib folder)
-    // Therefore all of them receive a router and give it back,
-    // So it's safe to just use compose and be done with it.
+    // Stage 4 (Mount Modules)
     const initializedMiddleware = middlewares.map((middleware) =>
         middleware(configuration.middleware),
     );
 
+    // All modules receive a router and give it back.
+    // E.g -> They are chainable with compose.
     const router = compose(koaRouter, ...initializedMiddleware, ...funcs);
 
     const app = compose(

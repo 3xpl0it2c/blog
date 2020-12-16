@@ -28,6 +28,8 @@ const handler = async (ctx: Context, next?: Next): Promise<void> => {
     const safeArticleBrief = await articleInitiativeJoiSchema
         .validateAsync(articleBrief)
         .catch();
+
+    ctx.body = safeArticleBrief;
 };
 
 export default declareAppModule({

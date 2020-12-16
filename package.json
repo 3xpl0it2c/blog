@@ -11,12 +11,13 @@
     "test": "jest",
     "docs:raml": "raml2html docs/RAML/main.raml",
     "docs:esdoc": "esdoc",
+    "clean": "rm -rf dist",
     "build:ts": "tsc && cp config/default.json ./dist/config/ && cp config/$NODE_ENV-config.json ./dist/config/",
-    "build:docker": "yarn build:ts && docker build --tag node_blog ./DockerFiles/Nodejs.Dockerfile",
-    "build": "yarn build:ts && docker-compose build",
+    "build:docker": "npm run build:ts && docker build --tag node_blog ./DockerFiles/Nodejs.Dockerfile",
+    "build": "npm run build:ts && docker-compose build",
     "start:docker": "docker run -d -p 3000:3000 node_blog",
-    "start:local": "yarn build && node dist/index.js",
-    "start": "yarn build && docker-compose start"
+    "start:local": "npm run build && node dist/index.js",
+    "start": "npm run build && docker-compose start"
   },
   "dependencies": {
     "argon2": "^0.26.2",
@@ -35,7 +36,7 @@
     "nanoid": "^3.1.10",
     "nodemailer": "^6.4.11",
     "nodemailer-mailgun-transport": "^2.0.0",
-    "slonik": "^22.4.11",
+    "slonik": "^23.3.0",
     "slonik-interceptor-query-normalisation": "^1.1.10"
   },
   "devDependencies": {

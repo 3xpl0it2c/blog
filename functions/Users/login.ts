@@ -55,6 +55,7 @@ const schema = Joi.object({
 }).xor('email', 'username');
 
 const handler = async (ctx: Context, next: Next) => {
+    // There might loggers and token parsers, wait for them.
     await next();
 
     const logError = log(ctx.logger, 'error');
@@ -79,19 +80,18 @@ const handler = async (ctx: Context, next: Next) => {
             return logError(privateErrorMessage)(why);
         });
 
-    // logError might return an error. (inside query's catch)
     if (query instanceof Error) {
+        // We have inserted an error message already, stop here.
         return ctx;
     }
 
-    const credentials = await validateUser(
+    const [userId, userFirstName] = await validateUser(
         query.username,
         query.email,
         query.password,
     )(ctx.slonik, ctx.logger);
 
-    if (!!credentials[0]) {
-        const [userId, name] = credentials;
+    if (!!userId) {
         // ! TODO: Find a way to inject the secret from the app's context
         const jsonWebToken = genToken(userId, 'CUSTOM_SAUCE', ctx.logger);
         const refreshToken = await genRefreshToken(ctx.redis, ctx.logger);
@@ -100,7 +100,7 @@ const handler = async (ctx: Context, next: Next) => {
             ? successfulResponse(
                 ctx,
                 jsonWebToken,
-                name,
+                userFirstName,
                 refreshToken,
             )
             : httpError(

@@ -10,3 +10,5 @@ index.js
 TODO
 # This is generated while debugging, see config/default.json
 some_name.log
+# NetBSD dumps.
+**/node.core
