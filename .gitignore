@@ -12,3 +12,4 @@ TODO
 some_name.log
 # NetBSD dumps.
 **/node.core
+.ctags
