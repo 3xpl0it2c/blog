@@ -23,6 +23,7 @@
     "argon2": "^0.26.2",
     "dotenv": "^8.2.0",
     "formidable": "^1.2.2",
+    "fp-ts": "^2.9.3",
     "ioredis": "^4.17.3",
     "joi": "^17.1.1",
     "jsonwebtoken": "^8.5.1",

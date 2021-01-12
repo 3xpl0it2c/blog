@@ -1,7 +1,7 @@
 /*
 Upon receiving a POST to the /user/login path,
 This function should:
-1.Receive the username XOR email and password.
+1.Receive the user-name XOR email and password.
 2.Validate the schema and content using Joi.
 
 If the credentials are empty or do not match the required schema:
@@ -21,16 +21,21 @@ In case credentials are incorrect:
 
 import { Context, Next } from 'koa';
 import Joi from 'joi';
+import { fold } from 'fp-ts/Option';
+import { tryCatchK, fold as teFold, TaskEither } from 'fp-ts/TaskEither';
 
-import { validateUser, genRefreshToken } from '@repository';
+import { createUserValidator, genRefreshToken } from '@repository';
 import { HttpStatusCodes } from '@interfaces';
 import {
     declareAppModule,
-    genToken,
     httpError,
-    log,
 } from '@lib';
 
+
+const HTTP_ERROR_MESSAGE = 'Invalid login Parameters';
+const HTTP_SUCCESS_MESSAGE = 'Verified login schema successfully';
+const INTERNAL_ERROR_MESSAGE = (e: Error) =>
+    `Failed verifying given login schema:${e.message}`;
 
 const successfulResponse = (
     ctx: Context,
@@ -48,58 +53,63 @@ const successfulResponse = (
     return ctx;
 };
 
-const schema = Joi.object({
+const joiSchema = Joi.object({
     username: Joi.string().alphanum().min(3).max(20),
     password: Joi.string().min(8).max(24).required(),
     email: Joi.string().min(5).email(),
 }).xor('email', 'username');
 
+const onSchemaError = (context: Context) => (schemaValidationError: Error) => {
+    httpError(
+        context,
+        HTTP_ERROR_MESSAGE,
+        HttpStatusCodes.BAD_REQUEST,
+    );
+    return INTERNAL_ERROR_MESSAGE(schemaValidationError);
+};
+
 const handler = async (ctx: Context, next: Next) => {
     // There might loggers and token parsers, wait for them.
     await next();
 
-    const logError = log(ctx.logger, 'error');
-    const logInfo = log(ctx.logger, 'info');
+    const { logError, logInfo } = ctx.state.loggers;
 
-    const query = await schema
-        .validateAsync(ctx.query)
-        .then((schema) => {
-            const successfulMessage = 'Verified login schema successfully';
-            return logInfo(successfulMessage)(schema);
-        })
-        .catch((why) => {
-            const publicErrorMessage = 'Invalid login Parameters';
-            const privateErrorMessage = 'Failed verifying given login schema';
+    const schemaValidator = validateSchema(
+        joiSchema,
+        HTTP_SUCCESS_MESSAGE,
+        onSchemaError(ctx),
+        logInfo,
+        logError,
+    );
 
-            httpError(
-                ctx,
-                publicErrorMessage,
-                HttpStatusCodes.BAD_REQUEST,
-            );
+    const query = await schemaValidator(ctx.query);
+    const userValidator = createUserValidator(ctx.slonik, ctx.logger);
+    // FIXME: Make createUserValidator use named parameters.
+    const validateUserF = ({username, email, password}: any) =>
+        userValidator(username, email, password);
 
-            return logError(privateErrorMessage)(why);
-        });
+    const validateUser = fold(
+        () => Promise.resolve(['', '']),
+        validateUserF,
+    );
 
-    if (query instanceof Error) {
+    if (!!query) {
         // We have inserted an error message already, stop here.
         return ctx;
     }
 
-    const [userId, userFirstName] = await validateUser(
-        query.username,
-        query.email,
-        query.password,
-    )(ctx.slonik, ctx.logger);
+    const [userId, userFirstName] = await validateUser(query);
 
     if (!!userId) {
-        // ! TODO: Find a way to inject the secret from the app's context
-        const jsonWebToken = genToken(userId, 'CUSTOM_SAUCE', ctx.logger);
+        // Migrate genRefreshToken to send a TaskEither,
+        // Then Chain JWT & Refresh token with a Monad.
+        const JWT: TaskEither<unknown, unknown> = ctx.state.genJWT(userId);
         const refreshToken = await genRefreshToken(ctx.redis, ctx.logger);
 
-        jsonWebToken && refreshToken
+        JWT && refreshToken
             ? successfulResponse(
                 ctx,
-                jsonWebToken,
+                JWT,
                 userFirstName,
                 refreshToken,
             )
@@ -111,7 +121,7 @@ const handler = async (ctx: Context, next: Next) => {
     } else {
         httpError(
             ctx,
-            'Invalid login credentials',
+            HTTP_ERROR_MESSAGE,
             HttpStatusCodes.BAD_REQUEST,
         );
     }

@@ -1,14 +1,40 @@
-import { verifyPassword, pick } from '@lib';
+import { verifyPassword, pick, log } from '@lib';
+import { tryCatchK, fold, TaskEither } from 'fp-ts/TaskEither';
+import { fromIO } from 'fp-ts/Task';
+import { IO } from 'fp-ts/IO';
 import { Logger } from 'log4js';
 import { DatabasePoolType, DataIntegrityError, sql } from 'slonik';
 
-export const validateUser = (
+const logDbError = (logger: Logger) => (why: Error): IO<void> => {
+    switch (true) {
+    case why instanceof DataIntegrityError:
+        logger.error(`Failed to locate user in database`);
+        logger.debug(
+            `validateUser.ts-multiplie rows for one user-${why}`,
+        );
+        break;
+    case why instanceof Error:
+        logger.error(`Unknown Error while validating`);
+        logger.debug(`validateUser.ts-Unknown error-${why}`);
+    }
+
+    return () => undefined;
+};
+
+const logPassValidationError = (reason: unknown): IO<boolean> => {
+    logger.error(`Failed to verify user-${id}`);
+    logger.debug(`validateUser.ts-Password verification failed-${reason}`);
+
+    return () => false;
+};
+
+export const createUserValidator = (
+    pool: DatabasePoolType,
+    logger: Logger,
+) => async (
     userName: string,
     email: string,
     userPassword: string,
-) => async (
-    pool: DatabasePoolType,
-    logger: Logger,
 ): Promise<[string, string]> => {
     const byEmail = sql`email=${email}`;
     const byUserName = sql`displayname=${userName}`;
@@ -23,32 +49,19 @@ export const validateUser = (
                                         `);
         });
 
-        const { id, password, firstname } = pick([
+        const { id, password: dbPassHash, firstname } = pick([
             'id',
             'password',
             'firstname',
         ])(result);
 
-        const [ok, why] = await verifyPassword(password, userPassword);
+        // Use a Monad, make result also a TaskEither.
+        const validatePass = verifyPassword(log(logger, 'error'))(dbPassHash);
+        const isPasswordOk = validatePass(userPassword);
 
-        if (why) {
-            logger.error(`Failed to verify user-${id}`);
-            logger.debug(`validateUser.ts-Password verification failed-${why}`);
-        }
-
-        return ok ? [id, firstname] : ['', ''];
+        return await validatePassword() ? [id, firstname] : ['', ''];
     } catch (why) {
-        switch (true) {
-        case why instanceof DataIntegrityError:
-            logger.error(`Failed to locate user in database`);
-            logger.debug(
-                `validateUser.ts-multiplie rows for one user-${why}`,
-            );
-            break;
-        case why instanceof Error:
-            logger.error(`Unknown Error while validating`);
-            logger.debug(`validateUser.ts-Unknown error-${why}`);
-        }
+        logDbError(logger)(why);
         return ['', ''];
     }
 };

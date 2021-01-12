@@ -7,9 +7,11 @@
 
 import { promisify } from 'util';
 import { verify } from 'jsonwebtoken';
+import { declareMiddleware, genToken, log } from '@lib';
+
 import { Context, Next } from 'koa';
 import { middleConf } from '@interfaces';
-import { declareMiddleware } from '@lib';
+
 
 const handler = (config: middleConf) => async (
     ctx: Context,
@@ -21,7 +23,7 @@ const handler = (config: middleConf) => async (
     // FIXME: Validate input.
     const token = ctx.headers['authorization'];
 
-    const tokenPayload = await verifyJWTPromise(token, secret ?? '');
+    const tokenPayload = await verifyJWTPromise(token, secret);
 
     ctx.state.user = tokenPayload ?? {};
 
