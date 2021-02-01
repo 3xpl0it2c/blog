@@ -12,9 +12,9 @@
     "docs:raml": "raml2html docs/RAML/main.raml",
     "docs:esdoc": "esdoc",
     "clean": "rm -rf dist",
-    "build:ts": "tsc && cp config/default.json ./dist/config/ && cp config/$NODE_ENV-config.json ./dist/config/",
-    "build:docker": "npm run build:ts && docker build --tag node_blog ./DockerFiles/Nodejs.Dockerfile",
-    "build": "npm run build:ts && docker-compose build",
+    "build:local": "tsc && cp config/default.json ./dist/config/ && cp config/$NODE_ENV-config.json ./dist/config/",
+    "build:docker": "npm run build:local && docker build --tag node_blog ./DockerFiles/Nodejs.Dockerfile",
+    "build": "npm run build:local && docker-compose build",
     "start:docker": "docker run -d -p 3000:3000 node_blog",
     "start:local": "npm run build && node dist/index.js",
     "start": "npm run build && docker-compose start"

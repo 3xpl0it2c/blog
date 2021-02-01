@@ -1,11 +1,15 @@
 /*
  * Provide an array of keys (or an object with the keys you want)
  * And get the keys you specified extracted from the target.
- * In case any keys were missing, check the __missing attribute.
-*/
+ * In case any keys were missing, the result is a None.
+ */
+
+import { assign } from '@lib';
+import { none, some, map, Option } from 'Option';
+import { pipe } from 'fp-ts/pipeable';
 
 // Just extract the keys from an object,
-// This is here because we also accept an empty object as a schema.
+// This is here because we also accept an objects as a schema.
 const makeSchema = (schema: Record<string, any> | string[]): string[] => {
     return schema instanceof Array ? schema : Object.keys(schema);
 };
@@ -14,30 +18,30 @@ const objEmpty = (target: any): boolean => Object.keys(target).length == 0;
 
 const pick = (schema: Record<string, any> | string[]) => (
     target?: Record<string, unknown> | null,
-): any => {
+): Option<any> => {
     if (!target || objEmpty(target)) {
-        throw new Error('target is empty');
+        return none();
     }
 
-    const requiredFields = makeSchema(schema);
+    const requiredFields: string[] = makeSchema(schema);
 
     if (requiredFields.length == 0) {
-        return target;
+        return some(target);
+    }
+
+    if (requiredFields.length == 1) {
+        return some(target[`${requiredFields[0]}`]);
     }
 
     return requiredFields.reduce((acc: any, field: string) => {
-        const element = target[field];
+        const accumulate = (acc) => assign(acc, {
+            [`${field}`]: target[field],
+        });
 
-        if (!!element) {
-            return Object.assign(acc, {
-                [`${field}`]: target[field],
-            });
-        } else {
-            acc?.__missing
-                ? acc.__missing.push(field) // Impure, but much simpler.
-                : (acc.__missing = [field]);
-            return acc;
-        }
+        return pipe(
+            acc,
+            map(accumulate),
+        );
     }, {});
 };
 

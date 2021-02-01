@@ -21,9 +21,7 @@ In case credentials are incorrect:
 
 import { Context, Next } from 'koa';
 import Joi from 'joi';
-import { fold } from 'fp-ts/Option';
-import { tryCatchK, fold as teFold, TaskEither } from 'fp-ts/TaskEither';
-
+import { tryCatchK, fold, TaskEither } from 'fp-ts/TaskEither';
 import { createUserValidator, genRefreshToken } from '@repository';
 import { HttpStatusCodes } from '@interfaces';
 import {
@@ -33,8 +31,7 @@ import {
 
 
 const HTTP_ERROR_MESSAGE = 'Invalid login Parameters';
-const HTTP_SUCCESS_MESSAGE = 'Verified login schema successfully';
-const INTERNAL_ERROR_MESSAGE = (e: Error) =>
+const INTERNAL_ERROR_MESSAGE = (e: unknown) =>
     `Failed verifying given login schema:${e.message}`;
 
 const successfulResponse = (
@@ -59,7 +56,7 @@ const joiSchema = Joi.object({
     email: Joi.string().min(5).email(),
 }).xor('email', 'username');
 
-const onSchemaError = (context: Context) => (schemaValidationError: Error) => {
+const onSchemaError = (context: Context) => (schemaValidationError: unknown) => {
     httpError(
         context,
         HTTP_ERROR_MESSAGE,
@@ -74,15 +71,12 @@ const handler = async (ctx: Context, next: Next) => {
 
     const { logError, logInfo } = ctx.state.loggers;
 
-    const schemaValidator = validateSchema(
-        joiSchema,
-        HTTP_SUCCESS_MESSAGE,
+    const validateSchema = tryCatchK(
+        joiSchema.validateAsync,
         onSchemaError(ctx),
-        logInfo,
-        logError,
     );
 
-    const query = await schemaValidator(ctx.query);
+    const query = validateSchema(ctx.query);
     const userValidator = createUserValidator(ctx.slonik, ctx.logger);
     // FIXME: Make createUserValidator use named parameters.
     const validateUserF = ({username, email, password}: any) =>
@@ -91,7 +85,7 @@ const handler = async (ctx: Context, next: Next) => {
     const validateUser = fold(
         () => Promise.resolve(['', '']),
         validateUserF,
-    );
+    )(userValidator);
 
     if (!!query) {
         // We have inserted an error message already, stop here.

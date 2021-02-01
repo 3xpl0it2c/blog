@@ -1,54 +1,54 @@
 import { nanoid } from 'nanoid/async';
+import { Either } from 'fp-ts/Either';
+import { tryCatchK } from 'fp-ts/TaskEither';
+import { pipe } from 'fp-ts/pipeable';
 import ms from 'ms';
 import * as Redis from 'ioredis';
 import { Logger } from 'log4js';
-import { responseOk, log, compose } from '@lib';
+import { log, compose } from '@lib';
 
 const TOKEN_LIFE_DURATION = ms('15 minutes');
+const BAD_ANSWER = '';
 
-const main = async (redis: Redis.Redis, logger: Logger): Promise<string> => {
+const main = (
+    redis: Redis.Redis,
+    logger: Logger
+): Promise<Either<any, unknown>> => {
     const logDebug = log(logger, 'debug');
-    const logNormal = log(logger, 'log');
-    const logFatal = log(logger, 'fatal');
+    const logError = log(logger, 'error');
 
-    // We return an empty string on failure, never throw an error.
-    const faultyResponse = '';
-    const randomUUID = await nanoid();
-
-    const onSuccess = (response: 'OK' | null) => {
-        if (responseOk(response)) {
-            const logMessage = `Generated refresh token`;
-            const debugMessage =
-                `Successfully generated refresh token ${randomUUID}`;
-
-            return compose(
-                randomUUID,
-                logDebug(debugMessage),
-                logNormal(logMessage),
-            );
-        } else {
-            return faultyResponse;
-        }
+    const onNanoIDFail = (reason: unknown) => {
+        logError(`Failed generating random UUID: ${reason}`);
     };
 
-    const onFailure = (why: Error) => {
+    const onRedisFailure = (why: unknown) => {
         const debugMessage =
             `Failure inserting refresh token - redis issue: ${why}`;
         const fatalMessage = `Failed to communicate with Redis`;
 
         return compose(
-            faultyResponse,
+            BAD_ANSWER,
             logDebug(debugMessage),
-            logFatal(fatalMessage),
+            logError(fatalMessage),
         );
     };
 
+    const randomUUID = tryCatchK(
+        nanoid(),
+        onNanoIDFail,
+    );
+
     // Set a refresh token that -
     // Will remove itself in TOKEN_LIFE_DURATION milliseconds.
-    return await redis
-        .set(randomUUID, '', 'PX', TOKEN_LIFE_DURATION, 'NX')
-        .then(onSuccess)
-        .catch(onFailure);
+    const setTaskEither = (uuid: string) => tryCatchK(
+        redis.set(uuid, '', 'PX', TOKEN_LIFE_DURATION, 'NX'),
+        onRedisFailure,
+    );
+
+    return pipe(
+        randomUUID,
+        setTaskEither,
+    );
 };
 
 export const genRefreshToken = main;

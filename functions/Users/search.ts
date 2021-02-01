@@ -6,11 +6,13 @@ If not - Respond with an message indicating the asker is not authenticated.
 2.Redirect to the appropriate search route.
 */
 
-import { declareAppModule, has } from '@lib';
+import { declareAppModule } from '@lib';
 import { sequenceT } from 'fp-ts/lib/Apply';
-import { NonEmptyArray, getSemigroup } from 'fp-ts/lib/NonEmptyArray';
+import { NonEmptyArray } from 'fp-ts/lib/NonEmptyArray';
 import { pipe } from 'fp-ts/lib/pipeable';
+import { semigroupString } from 'fp-ts/Semigroup';
 import {
+    fold,
     mapLeft,
     map,
     getValidation,
@@ -21,6 +23,11 @@ import {
 
 import { Next, Context } from 'koa';
 import { HttpStatusCodes } from '@interfaces';
+
+type SearchQuery = {
+    query: string;
+    searchMethod: string;
+};
 
 const lift = <E, A>(
     check: (a: A) => Either<E, A>,
@@ -56,7 +63,7 @@ const searchMethodSupported = (target: string): Either<string, string> =>
 const nonEmptyStringValidation = lift(nonEmptyString);
 const searchMethodSupportedValidation = lift(searchMethodSupported);
 
-const StringApplicativeValidation = getValidation(getSemigroup<string>());
+const StringApplicativeValidation = getValidation(semigroupString);
 
 const validateQuery = (
     query: string,
@@ -81,12 +88,44 @@ const validateSearchMethod = (
     );
 };
 
+const validateSearchQueryHasValidMethod = (
+    sq: SearchQuery,
+) => {
+    const validSearchMethod = validateSearchMethod(sq.searchMethod);
+    const onLeft = (errors: NonEmptyArray<string>) => {
+        return `Invalid search method: ${errors}`;
+    };
+
+    const onRight = (_: string) => {
+        return sq;
+    };
+
+    return fold(onLeft, onRight)(validSearchMethod);
+};
+
+const validateSearchQueryHasValidQuery = (
+    sq: SearchQuery,
+) => {
+    const validQuery = validateQuery(sq.query);
+    const onLeft = (errors: NonEmptyArray<string>) => {
+        return `Invalid query: ${errors}`;
+    };
+
+    const onRight = (_: string) => {
+        return sq;
+    };
+
+    return fold(onLeft, onRight)(validQuery);
+};
+
 const handler = async (ctx: Context, next: Next) => {
     await next();
 
     const { by: searchMethod, query } = ctx.request.query;
-    const safeQuery = validateQuery(query);
-    const safeSearchMethod = validateSearchMethod(searchMethod);
+    const unsafeSearchQuery = {
+        query,
+        searchMethod,
+    };
 
     return ctx;
 };
