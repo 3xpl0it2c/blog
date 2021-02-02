@@ -36,8 +36,8 @@ const insertKoaConf = (config: Record<any, string>) => (app: Koa<any, any>) => {
     };
 
     return configKeys.reduce((acc, key) => {
-        // insert to the app a certain key and it's associated value.
-        // We have to use getters and Object.defineProperty.
+        // Insert to the app a certain key and it's associated value.
+        // Somehow this only works with getters and Object.defineProperty.
         const keyToGetter = convertToGetter(config);
         Object.defineProperty(acc, key, keyToGetter(key));
         return acc;
