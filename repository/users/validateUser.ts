@@ -2,8 +2,8 @@ import { createPasswordValidator, pick, log } from '@lib';
 import { fold as foldEither, Either } from 'fp-ts/Either';
 import { fromNullable, Option } from 'fp-ts/Option';
 import { IO } from 'fp-ts/IO';
-import { fromIO, Task } from 'fp-ts/Task';
-import { flow } from 'fp-ts/lib/function';
+import { fromIO, of, ap, Task } from 'fp-ts/Task';
+import { flow, pipe } from 'fp-ts/lib/function';
 import { Logger } from 'log4js';
 
 import {
@@ -73,7 +73,6 @@ const makeUserDetailsFetcher = (logger: Logger) => (pool: DatabasePoolType) => (
     return tryCatchK(x, makeDbErrLogger(logger));
 };
 
-// The function says it returns a string. Should return an option.
 const determineIdentifier = (userIdentifier: Either<string, string>) => {
     const onEmailIdentifier = (email: string) => `email = ${email}`;
     const onUNameIdentifier = (username: string) =>
@@ -89,14 +88,24 @@ const fetchUserDetails = (pool: DatabasePoolType, logger: Logger) => async (
     const extractDetails = pick(['id', 'password', 'firstname']);
 
     const userDetailsFetcher = makeUserDetailsFetcher(logger)(pool);
-    const userDetailsTE = userDetailsFetcher(identifier);
 
     const logDbErr = makeDbErrLogger(logger);
     const onDbFailure = flow(logDbErr, fromIO);
 
-    const getUserDetails = foldTE(onDbFailure, extractDetails)(userDetailsTE());
+    const getUserDetails = foldTE(
+        onDbFailure,
+        extractDetails,
+    ) as () => Task<DBResults | null>;
 
-    return getUserDetails().then(fromNullable);
+    const fromNullableTask = of(fromNullable);
+
+    return pipe(
+        identifier,
+        userDetailsFetcher,
+        (x) => x(),
+        getUserDetails,
+        (x) => ap(x)(fromNullableTask),
+    );
 };
 
 export const createUserValidator = (
@@ -109,12 +118,14 @@ export const createUserValidator = (
     const userDetails = await fetchUserDetails(pool, logger)(userIdentifier);
 
     const userDetailsTE = fromOption(() => null)(
-        userDetails as Option<DBResults>,
+        (await userDetails()) as Option<DBResults>,
     );
 
     const onPassValidationErr = flow(makeValidationErrLogger(logger), fromIO);
 
-    const validatePassword = ({ password: hash }: DBResults) =>
+    const validatePassword = ({
+        password: hash,
+    }: Pick<DBResults, 'password'>) =>
         createPasswordValidator(log(logger, 'error'))(hash)(providedPassword);
 
     const extractNameAndId = pick(['firstname', 'id']);
