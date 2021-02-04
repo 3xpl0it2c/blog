@@ -1,4 +1,4 @@
-version: "3.8"
+version: "3.7"
 
 services:
   reverse_proxy:
@@ -10,6 +10,8 @@ services:
       - "80:80"
     depends_on:
       - nodejs
+    networks:
+        app-network
 
   nodejs:
     container_name: "nodejs"
@@ -20,11 +22,15 @@ services:
     depends_on:
       - redis
       - postgres
+    networks:
+        app-network
 
   redis:
     container_name: "redis"
     build: ./Docker/Redis/Redis.Dockerfile
     restart: unless-stopped
+    networks:
+        app-network
 
   postgres:
     container_name: "postgres"
@@ -32,6 +38,8 @@ services:
     restart: unless-stopped
     environment:
       - POSTGRES_PASSWORD
+    networks:
+        app-network
 
 networks:
   app-network:

@@ -7,6 +7,11 @@ And mark the user as valid (e.g the user has verified his email address).
 import { sql, DatabasePoolType, DatabasePoolConnectionType } from 'slonik';
 import { Logger } from 'log4js';
 import { pick, log, compose } from '@lib';
+import { fold } from 'fp-ts/Option';
+import { of, Task } from 'fp-ts/Task';
+import { tryCatchK, getOrElse } from 'fp-ts/TaskEither';
+import {flow, pipe} from 'fp-ts/lib/function';
+import {ConnectionRoutineType} from 'slonik/dist/types';
 
 const createMarkAsValidQuery = (token: string) => async (
     pool: DatabasePoolConnectionType,
@@ -35,7 +40,6 @@ export const markUserAsValid = (token: string) => async (
     logger: Logger,
     slonik: DatabasePoolType,
 ): Promise<[string, string]> => {
-    // * Just return null on faulty input, don't throw an error.
     if (!token) return ['', ''];
 
     const logInfo = log(logger, 'info');
@@ -47,21 +51,24 @@ export const markUserAsValid = (token: string) => async (
     const desiredPropsFromQuery = ['firstname', 'id'];
     const extractDesiredProps = pick(desiredPropsFromQuery);
 
-    const onQuerySuccess = (results: any): [string, string] => {
+    const onQuerySuccess = (
+        results: Record<string, unknown>,
+    ): [string, string] => {
         const logMessage = `marked user with token ${token} as valid`;
 
-        const extractedProps = compose(
-            results,
-            extractDesiredProps,
+        const extractedProps = extractDesiredProps(results);
+        const returnEmptyVal = (): [string, string] => ['', ''];
+        const mapResultsToTuple = flow(
+            mapIdAndNameToResult,
             logInfo(logMessage),
         );
 
-        return extractedProps
-            ? mapIdAndNameToResult(extractedProps)
-            : ['', ''];
+        const x = fold(returnEmptyVal, mapResultsToTuple)(extractedProps);
+
+        return x;
     };
 
-    const onQueryError = (why: Error): [string, string] => {
+    const onQueryError = (why: unknown): [string, string] => {
         const errorMessage = `Can\'t mark user as valid - ${why}`;
 
         return compose(
@@ -70,8 +77,16 @@ export const markUserAsValid = (token: string) => async (
         );
     };
 
-    return await slonik
-        .connect(executeQuery)
-        .then(onQuerySuccess)
-        .catch(onQueryError);
+    const dbQuery = tryCatchK(
+        (a: ConnectionRoutineType<any>) => slonik.connect(a),
+        onQueryError,
+    )(executeQuery);
+
+    const x = pipe(
+        dbQuery,
+        getOrElse((): Task<any> => of({})),
+    );
+
+    return await x()
+        .then(onQuerySuccess);
 };

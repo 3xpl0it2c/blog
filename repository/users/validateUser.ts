@@ -18,6 +18,7 @@ import {
     fold as foldTE,
     chainFirst,
     fromOption,
+    fromTask,
 } from 'fp-ts/TaskEither';
 
 type Arguments = {
@@ -68,24 +69,27 @@ const makeUserDetailsFetcher = (logger: Logger) => (pool: DatabasePoolType) => (
     const onPoolConnection = async (conn: DatabasePoolConnectionType) =>
         await conn.maybeOne(sqlQuery);
 
-    const x = () => pool.connect(onPoolConnection);
 
-    return tryCatchK(x, makeDbErrLogger(logger));
+    return tryCatchK(
+        pool.connect,
+        makeDbErrLogger(logger),
+    )(onPoolConnection);
 };
 
-const determineIdentifier = (userIdentifier: Either<string, string>) => {
+const determineIdentifier = (identifier: Either<string, string>): string => {
     const onEmailIdentifier = (email: string) => `email = ${email}`;
     const onUNameIdentifier = (username: string) =>
         `display_name = ${username}`;
 
-    return foldEither(onEmailIdentifier, onUNameIdentifier)(userIdentifier);
+    return foldEither(onEmailIdentifier, onUNameIdentifier)(identifier);
 };
 
-const fetchUserDetails = (pool: DatabasePoolType, logger: Logger) => async (
+const fetchUserDetails = (pool: DatabasePoolType, logger: Logger) => (
     userIdentifier: Either<string, string>,
 ) => {
     const identifier = determineIdentifier(userIdentifier);
-    const extractDetails = pick(['id', 'password', 'firstname']);
+    const extractDetails = (...a: any[]) =>
+        fromOption(() => null)(pick(['id', 'password', 'firstname'])(...a));
 
     const userDetailsFetcher = makeUserDetailsFetcher(logger)(pool);
 
@@ -97,14 +101,14 @@ const fetchUserDetails = (pool: DatabasePoolType, logger: Logger) => async (
         extractDetails,
     ) as () => Task<DBResults | null>;
 
-    const fromNullableTask = of(fromNullable);
+
+    const taskFromNullable = of(fromNullable);
 
     return pipe(
         identifier,
         userDetailsFetcher,
-        (x) => x(),
         getUserDetails,
-        (x) => ap(x)(fromNullableTask),
+        (x) => ap(x)(taskFromNullable),
     );
 };
 
@@ -114,8 +118,9 @@ export const createUserValidator = (
 ) => async ({
     userIdentifier,
     providedPassword,
-}: Arguments): Promise<Task<unknown>> => {
-    const userDetails = await fetchUserDetails(pool, logger)(userIdentifier);
+}: Arguments): Promise<unknown> => {
+    const userDetails = fetchUserDetails(pool, logger)(userIdentifier);
+    //    const userDetailsTE = fromTask(userDetails);
 
     const userDetailsTE = fromOption(() => null)(
         (await userDetails()) as Option<DBResults>,
@@ -123,14 +128,18 @@ export const createUserValidator = (
 
     const onPassValidationErr = flow(makeValidationErrLogger(logger), fromIO);
 
+    const extractNameAndId = (...a: any[]) =>
+        fromOption(() => null)(pick(['firstname', 'id'])(...a));
+
     const validatePassword = ({
         password: hash,
     }: Pick<DBResults, 'password'>) =>
         createPasswordValidator(log(logger, 'error'))(hash)(providedPassword);
 
-    const extractNameAndId = pick(['firstname', 'id']);
-    // TODO: Rename !
-    const computation = chainFirst(validatePassword)(userDetailsTE);
+    const validatedUserDetails = chainFirst(validatePassword)(userDetailsTE);
 
-    return foldTE(onPassValidationErr, extractNameAndId)(computation);
+    return await foldTE(
+        onPassValidationErr,
+        extractNameAndId,
+    )(validatedUserDetails)();
 };

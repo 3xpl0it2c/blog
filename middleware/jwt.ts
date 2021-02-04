@@ -7,7 +7,7 @@
 
 import { promisify } from 'util';
 import { verify } from 'jsonwebtoken';
-import { declareMiddleware, genToken, log } from '@lib';
+import { declareMiddleware } from '@lib';
 
 import { Context, Next } from 'koa';
 import { middleConf } from '@interfaces';

@@ -1,7 +1,5 @@
 import { nanoid } from 'nanoid/async';
-import { Either } from 'fp-ts/Either';
-import { tryCatchK } from 'fp-ts/TaskEither';
-import { pipe } from 'fp-ts/pipeable';
+import { tryCatchK, chain, TaskEither } from 'fp-ts/TaskEither';
 import ms from 'ms';
 import * as Redis from 'ioredis';
 import { Logger } from 'log4js';
@@ -12,13 +10,14 @@ const BAD_ANSWER = '';
 
 const main = (
     redis: Redis.Redis,
-    logger: Logger
-): Promise<Either<any, unknown>> => {
+    logger: Logger,
+): TaskEither<any, unknown> => {
     const logDebug = log(logger, 'debug');
     const logError = log(logger, 'error');
 
     const onNanoIDFail = (reason: unknown) => {
         logError(`Failed generating random UUID: ${reason}`);
+        return '';
     };
 
     const onRedisFailure = (why: unknown) => {
@@ -33,22 +32,19 @@ const main = (
         );
     };
 
-    const randomUUID = tryCatchK(
-        nanoid(),
+    const genRandomUUID = tryCatchK(
+        nanoid,
         onNanoIDFail,
     );
 
     // Set a refresh token that -
     // Will remove itself in TOKEN_LIFE_DURATION milliseconds.
-    const setTaskEither = (uuid: string) => tryCatchK(
-        redis.set(uuid, '', 'PX', TOKEN_LIFE_DURATION, 'NX'),
+    const setTaskEither = tryCatchK(
+        (uuid: string) => redis.set(uuid, '', 'PX', TOKEN_LIFE_DURATION, 'NX'),
         onRedisFailure,
     );
 
-    return pipe(
-        randomUUID,
-        setTaskEither,
-    );
+    return chain(setTaskEither)(genRandomUUID());
 };
 
 export const genRefreshToken = main;

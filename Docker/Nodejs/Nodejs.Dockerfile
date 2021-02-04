@@ -1,4 +1,4 @@
-FROM node:lts-alpine AS nodejs
+FROM node:alpine AS nodejs
 
 ENV YARN_VERSION 1.22.10
 
@@ -21,7 +21,7 @@ COPY --chown=node:node ./LICENSE ./
 COPY --chown=node:node ./.env ./
 COPY --chown=node:node ./yarn.lock ./
 #COPY ./config/production-config.json ./
-#COPY ./config/development-config.json ./
+COPY ./config/development-config.json ./
 COPY --chown=node:node ./config/default.json ./config/
 COPY --chown=node:node ./package.json ./
 RUN yarn install --pure-lockfile

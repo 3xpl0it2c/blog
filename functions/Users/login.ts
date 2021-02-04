@@ -21,7 +21,8 @@ In case credentials are incorrect:
 
 import { Context, Next } from 'koa';
 import Joi from 'joi';
-import { tryCatchK, fold, TaskEither } from 'fp-ts/TaskEither';
+import { left, right } from 'fp-ts/Either';
+import { tryCatchK, chain, TaskEither } from 'fp-ts/TaskEither';
 import { createUserValidator, genRefreshToken } from '@repository';
 import { HttpStatusCodes } from '@interfaces';
 import {
@@ -71,26 +72,23 @@ const handler = async (ctx: Context, next: Next) => {
 
     const { logError, logInfo } = ctx.state.loggers;
 
-    const validateSchema = tryCatchK(
+    const validateAgainstSchema = tryCatchK(
         joiSchema.validateAsync,
         onSchemaError(ctx),
     );
 
-    const query = validateSchema(ctx.query);
-    const userValidator = createUserValidator(ctx.slonik, ctx.logger);
-    // FIXME: Make createUserValidator use named parameters.
-    const validateUserF = ({username, email, password}: any) =>
-        userValidator(username, email, password);
+    const query = validateAgainstSchema(ctx.query);
+    const validateUser = createUserValidator(ctx.slonik, ctx.logger);
 
-    const validateUser = fold(
-        () => Promise.resolve(['', '']),
-        validateUserF,
-    )(userValidator);
+    const mapQueryToValidtorProps = (
+        x: {password: string, email: string, username: string},
+    ) => {
+        const { password, email, username } = x;
+        const userIdentifier = !!username ? right(username) : left(email);
+        return validateUser({ providedPassword: password, userIdentifier});
+    };
 
-    if (!!query) {
-        // We have inserted an error message already, stop here.
-        return ctx;
-    }
+    const x = await chain(mapQueryToValidtorProps)(query)();
 
     const [userId, userFirstName] = await validateUser(query);
 
@@ -98,7 +96,7 @@ const handler = async (ctx: Context, next: Next) => {
         // Migrate genRefreshToken to send a TaskEither,
         // Then Chain JWT & Refresh token with a Monad.
         const JWT: TaskEither<unknown, unknown> = ctx.state.genJWT(userId);
-        const refreshToken = await genRefreshToken(ctx.redis, ctx.logger);
+        const refreshToken = genRefreshToken(ctx.redis, ctx.logger);
 
         JWT && refreshToken
             ? successfulResponse(

@@ -5,7 +5,7 @@
  */
 
 import { assign } from '@lib';
-import { none, some, map, Option } from 'Option';
+import { none, some, map, fromNullable, Option } from 'fp-ts/Option';
 import { pipe } from 'fp-ts/pipeable';
 
 // Just extract the keys from an object,
@@ -20,21 +20,21 @@ const pick = (schema: Record<string, any> | string[]) => (
     target?: Record<string, unknown> | null,
 ): Option<any> => {
     if (!target || objEmpty(target)) {
-        return none();
+        return none;
     }
 
-    const requiredFields: string[] = makeSchema(schema);
+    const fieldsToExtract: string[] = makeSchema(schema);
 
-    if (requiredFields.length == 0) {
+    if (fieldsToExtract.length == 0) {
         return some(target);
     }
 
-    if (requiredFields.length == 1) {
-        return some(target[`${requiredFields[0]}`]);
+    if (fieldsToExtract.length == 1) {
+        return fromNullable(target[`${fieldsToExtract[0]}`]);
     }
 
-    return requiredFields.reduce((acc: any, field: string) => {
-        const accumulate = (acc) => assign(acc, {
+    return fieldsToExtract.reduce((acc: Option<any>, field: string) => {
+        const accumulate = (acc: any) => assign(acc, {
             [`${field}`]: target[field],
         });
 
@@ -42,7 +42,7 @@ const pick = (schema: Record<string, any> | string[]) => (
             acc,
             map(accumulate),
         );
-    }, {});
+    }, some({}));
 };
 
 export { pick };

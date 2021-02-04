@@ -16,6 +16,7 @@ import Koa from 'koa';
 import { config as setupEnv } from 'dotenv';
 import { configure, Log4js } from 'log4js';
 import Router from 'koa-router';
+import { getOrElse } from 'fp-ts/Option';
 
 import loadConfig from '@config';
 import { compose, pick, assign } from '@lib';
@@ -23,6 +24,7 @@ import services from '@services';
 import middlewares from '@middleware';
 import funcs from '@functions';
 import { Service, appConfiguration } from '@interfaces';
+import { pipe } from 'fp-ts/lib/function';
 
 const koaConfKeys = ['silent', 'subDomainOffset', 'keys', 'proxy', 'env'];
 
@@ -104,7 +106,11 @@ const main = async (): Promise<any> => {
         configFolderPath,
     );
 
-    const koaConf = extractKoaConf(configuration.server);
+    const koaConf = pipe(
+        configuration.server,
+        extractKoaConf,
+        getOrElse(() => ({})),
+    );
 
     // * Finished stage 2 (setup logger).
     const logger = configure(configuration.services.logger);
