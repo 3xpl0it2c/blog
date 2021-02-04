@@ -2,7 +2,6 @@ node_modules
 dist/**
 ./secret
 .env*
-yarn.lock
 .vscode
 .DS_Store
 config/*-config.json
