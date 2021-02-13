@@ -1,5 +1,5 @@
 {
-  "name": "Blog",
+  "name": "blog",
   "version": "1.0.0",
   "description": "My vision of the classic project",
   "main": "dist/index.js",
@@ -14,7 +14,7 @@
     "clean": "rm -rf dist",
     "build:local": "tsc && cp config/default.json ./dist/config/ && cp config/$NODE_ENV-config.json ./dist/config/",
     "build:docker": "npm run build:local && docker build --tag node_blog ./DockerFiles/Nodejs.Dockerfile",
-    "build": "npm run build:local && docker-compose build",
+    "build": "npm run build:local && docker-compose build --env-file \".env.$NODE_ENV\"",
     "start:docker": "docker run -d -p 3000:3000 node_blog",
     "start:local": "npm run build && node dist/index.js",
     "start": "npm run build && docker-compose start"

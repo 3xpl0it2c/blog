@@ -18,7 +18,7 @@ import {
     fold as foldTE,
     chainFirst,
     fromOption,
-    fromTask,
+    TaskEither,
 } from 'fp-ts/TaskEither';
 
 type Arguments = {
@@ -31,6 +31,8 @@ type DBResults = {
     password: string;
     id: string;
 };
+
+type FirstNameAndID = Pick<DBResults, 'firstname' | 'id'>;
 
 const makeDbErrLogger = (logger: Logger) => (reason: unknown): IO<unknown> => {
     switch (true) {
@@ -50,7 +52,7 @@ const makeDbErrLogger = (logger: Logger) => (reason: unknown): IO<unknown> => {
 
 const makeValidationErrLogger = (logger: Logger) => (
     reason: unknown,
-): IO<unknown> => {
+): IO<any> => {
     logger.error(`Failed to verify user via password`);
     logger.debug(`validateUser.ts-Password verification failed-${reason}`);
 
@@ -69,11 +71,7 @@ const makeUserDetailsFetcher = (logger: Logger) => (pool: DatabasePoolType) => (
     const onPoolConnection = async (conn: DatabasePoolConnectionType) =>
         await conn.maybeOne(sqlQuery);
 
-
-    return tryCatchK(
-        pool.connect,
-        makeDbErrLogger(logger),
-    )(onPoolConnection);
+    return tryCatchK(pool.connect, makeDbErrLogger(logger))(onPoolConnection);
 };
 
 const determineIdentifier = (identifier: Either<string, string>): string => {
@@ -101,14 +99,10 @@ const fetchUserDetails = (pool: DatabasePoolType, logger: Logger) => (
         extractDetails,
     ) as () => Task<DBResults | null>;
 
-
     const taskFromNullable = of(fromNullable);
 
-    return pipe(
-        identifier,
-        userDetailsFetcher,
-        getUserDetails,
-        (x) => ap(x)(taskFromNullable),
+    return pipe(identifier, userDetailsFetcher, getUserDetails, (x) =>
+        ap(x)(taskFromNullable),
     );
 };
 
@@ -118,9 +112,8 @@ export const createUserValidator = (
 ) => async ({
     userIdentifier,
     providedPassword,
-}: Arguments): Promise<unknown> => {
+}: Arguments): Promise<FirstNameAndID> => {
     const userDetails = fetchUserDetails(pool, logger)(userIdentifier);
-    //    const userDetailsTE = fromTask(userDetails);
 
     const userDetailsTE = fromOption(() => null)(
         (await userDetails()) as Option<DBResults>,
@@ -131,12 +124,12 @@ export const createUserValidator = (
     const extractNameAndId = (...a: any[]) =>
         fromOption(() => null)(pick(['firstname', 'id'])(...a));
 
-    const validatePassword = ({
-        password: hash,
-    }: Pick<DBResults, 'password'>) =>
+    const validatePassword = ({ password: hash }: DBResults) =>
         createPasswordValidator(log(logger, 'error'))(hash)(providedPassword);
 
-    const validatedUserDetails = chainFirst(validatePassword)(userDetailsTE);
+    const validatedUserDetails: TaskEither<null, DBResults> = chainFirst(
+        validatePassword,
+    )(userDetailsTE);
 
     return await foldTE(
         onPassValidationErr,

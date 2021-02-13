@@ -16,7 +16,6 @@ RUN mkdir -p /home/node/app/node_modules && chown -R node:node /home/node/app
 USER node
 WORKDIR /home/node/app
 
-COPY --chown=node:node ./dist/ ./
 COPY --chown=node:node ./LICENSE ./
 COPY --chown=node:node ./.env ./
 COPY --chown=node:node ./yarn.lock ./
@@ -26,6 +25,7 @@ COPY --chown=node:node ./config/default.json ./config/
 COPY --chown=node:node ./package.json ./
 RUN yarn install --pure-lockfile
 
+COPY --chown=node:node ./dist/ ./
 EXPOSE 3000
 
 CMD ["node", "index.js"]

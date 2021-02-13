@@ -10,27 +10,25 @@ import { declareMiddleware, genToken, log } from '@lib';
 
 import { Context, Next } from 'koa';
 
-
 const handler = (config: middleConf) => async (ctx: Context, next: Next) => {
-    const secret = config?.jwt.masterKey;
+    const JWT_SECRET = config?.jwt.masterKey;
     const logError = log(ctx.logger, 'error');
     const logDebug = log(ctx.logger, 'debug');
     const logInfo = log(ctx.logger, 'info');
 
     /**
      @desc generates a JWT.
-     @param data the data to insert into the token.
+     @param data the data to insert into the token (token payload).
      @return returns a TaskEither containing an error or a token.
      */
     function generate(data: string) {
-        return genToken(data, secret, logDebug, logError, logInfo);
+        return genToken(data, JWT_SECRET, logDebug, logError, logInfo);
     }
 
     ctx.state.genJWT = generate;
 
     return await next();
 };
-
 
 export default declareMiddleware({
     handler,
