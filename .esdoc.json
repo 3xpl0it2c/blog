@@ -1,7 +1,0 @@
-{
-    "source": "",
-    "destination": "./docs/generated/",
-    "plugins": [
-        { "name": "esdoc-standard-plugin" }
-    ]
-}
