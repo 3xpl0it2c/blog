@@ -1,0 +1,15 @@
+node_modules
+dist/**
+./secret
+.env*
+.vscode
+.DS_Store
+config/*-config.json
+index.js
+TODO
+# This is generated while debugging, see config/default.json
+some_name.log
+# NetBSD dumps.
+**/node.core
+.ctags
+tags
