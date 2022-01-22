@@ -34,7 +34,7 @@
     "log4js": "^6.3.0",
     "module-alias": "^2.2.2",
     "ms": "^2.1.2",
-    "nanoid": "^3.1.10",
+    "nanoid": "^3.1.31",
     "nodemailer": "^6.4.11",
     "nodemailer-mailgun-transport": "^2.0.0",
     "slonik": "^23.3.0",
